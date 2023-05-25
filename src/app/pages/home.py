@@ -25,7 +25,7 @@ class HomePage(Page):
         # ----- COMPONENTS ----- #
         # Header
         st.markdown(
-            f"<h1 style='text-align: center;'> {self.text['title']} </h1>",
+            f"<h1 style='text-align: center;'> {st.session_state.text[self.id]['title']} </h1>",
             unsafe_allow_html=True
         )
-        st.markdown(self.text["description"])
+        st.markdown(st.session_state.text[self.id]["description"])

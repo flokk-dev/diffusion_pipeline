@@ -26,7 +26,6 @@ class Page:
         """
         # ----- Attributes ----- #
         self.id = page_id
-        self.text = st.session_state.text[self.id]
 
         # Copies the st.session_state
         if self.id not in st.session_state:
@@ -50,11 +49,13 @@ class Component(st._DeltaGenerator):
             page_id: str
                 id of the page containing the Component
         """
-        # ----- Mother Class ----- #
+        # ----- Mother class ----- #
         super(Component, self).__init__()
 
         # ----- Attributes ----- #
         self.id += 1
+        self.page_id = page_id
+
         self.session_state = st.session_state[page_id]
 
 
@@ -77,11 +78,12 @@ class SubComponent(st._DeltaGenerator):
             page_id: str
                 id of the page containing the Component
         """
-        # ----- Mother Class ----- #
+        # ----- Mother class ----- #
         super(SubComponent, self).__init__(parent=parent)
 
         # ----- Attributes ----- #
         self.id += 1
+        self.page_id = page_id
 
         self.parent = parent
         self.session_state = st.session_state[page_id]

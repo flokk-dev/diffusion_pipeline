@@ -14,53 +14,47 @@ from PIL import Image
 import torch
 
 # IMPORT: deep learning
-from clip_interrogator import Config, Interrogator as ClipInterrogator
+from clip_interrogator import Config, Interrogator
+
+# IMPORT: project
+from src.image_utils.image_captioning.image_captioner import ImageCaptioner
 
 
-class Interrogator:
+class ClipInterrogator(ImageCaptioner):
     """
-    Represents a Interrogator.
+    Represents a ClipInterrogator.
 
     Attributes
     ----------
         _model: Interrogator
             model needed to generate captions
     """
-    _DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    def __init__(self):
+        """ Initializes an ClipInterrogator. """
+        # ----- Mother class ----- #
+        super(ClipInterrogator, self).__init__()
 
-    def __init__(
-            self,
-            config: Dict[str, Any]
-    ):
-        """
-        Initializes an Interrogator.
-
-        Parameters
-        ----------
-            config: Dict[str, Any]
-                configuration needed to adjust the program behaviour
-        """
         # ----- Attributes ----- #
         model_config: Config = Config()
 
-        model_config.blip_offload = config["blip_offload"]
-        model_config.chunk_size = config["chunk_size"]
-        model_config.flavor_intermediate_count = config["flavor_intermediate_count"]
-        model_config.blip_num_beams = config["blip_num_beams"]
+        model_config.blip_offload = True
+        model_config.chunk_size = 2048
+        model_config.flavor_intermediate_count = 512
+        model_config.blip_num_beams = 64
 
         # Model
-        self._model: ClipInterrogator = ClipInterrogator(model_config)
+        self._model: Interrogator = Interrogator(model_config)
 
     def __call__(
-            self,
-            image: Image.Image,
-            mode: str = None,
-            max_flavor: int = 10
+        self,
+        image: torch.Tensor,
+        mode: str = None,
+        max_flavor: int = 10
     ) -> str:
         """
         Parameters
         ----------
-            image: Image.Image
+            image: torch.Tensor
                 image to generate caption from
             mode: str
                 mode of the captioning

@@ -2,3 +2,5 @@ torch
 torchvision
 clip-interrogator
 opencv-contrib-python
+mediapipe
+controlnet-aux

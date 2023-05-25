@@ -10,21 +10,19 @@ Purpose:
 import streamlit as st
 
 # IMPORT: project
-import utils
-
 from src.app.component import Page, Component, SubComponent
-from src.image_utils.image import ImageToProcess
+from src.image_utils.image import ImageToDescribe
 from src.app.component import ImageUploader
 
 
-class ImageProcessingPage(Page):
-    """ Represents an ImageProcessingPage. """
+class ImageCaptioningPage(Page):
+    """ Represents an ImageCaptioningPage. """
     def __init__(
         self
     ):
-        """ Initializes an ImageProcessingPage. """
+        """ Initializes an ImageCaptioningPage. """
         # ----- Mother class ----- #
-        super(ImageProcessingPage, self).__init__(page_id="image_processing")
+        super(ImageCaptioningPage, self).__init__(page_id="image_captioning")
 
         # ----- Session state ----- #
         if "images" not in self.session_state:
@@ -43,14 +41,14 @@ class ImageProcessingPage(Page):
 
         # Image uploader
         st.markdown("---")
-        ImageUploader(page_id=self.id, image_type=ImageToProcess)
+        ImageUploader(page_id=self.id, image_type=ImageToDescribe)
 
         if len(self.session_state["images"]) > 0:
             st.markdown("---")
 
             # Image Carousel
             ImageDisplayer(page_id=self.id)
-            ImageProcessorOptions(page_id=self.id)
+            ImageCaptionerOptions(page_id=self.id)
 
 
 class ImageDisplayer(Component):
@@ -71,34 +69,22 @@ class ImageDisplayer(Component):
         super(ImageDisplayer, self).__init__(page_id)
 
         # ----- Components ----- #
-        col1, col2 = self.columns((0.5, 0.5))
-
         # Image
-        col1.image(
+        self.image(
             image=self.session_state["images"][self.session_state["image_idx"]].image,
             caption="",
             use_column_width=True
         )
 
-        # Processed image
-        col2.image(
-            image=utils.resize_to_shape(
-                image=self.session_state["images"][self.session_state["image_idx"]].modified_image,
-                shape=self.session_state["images"][self.session_state["image_idx"]].image.shape
-            ),
-            caption="",
-            use_column_width=True
-        )
 
-
-class ImageProcessorOptions(Component):
-    """ Represents an ImageProcessorOptions. """
+class ImageCaptionerOptions(Component):
+    """ Represents an ImageCaptionerOptions. """
     def __init__(
         self,
         page_id: str
     ):
         """
-        Initializes an ImageProcessorOptions.
+        Initializes an ImageCaptionerOptions.
 
         Parameters
         ----------
@@ -106,26 +92,24 @@ class ImageProcessorOptions(Component):
                 id of the page containing the Component
         """
         # ----- Mother class ----- #
-        super(ImageProcessorOptions, self).__init__(page_id)
+        super(ImageCaptionerOptions, self).__init__(page_id)
 
         # ----- Components ----- #
         # If only one image has been loaded
         if len(self.session_state["images"]) == 1:
-            cols = self.columns((0.5, 0.25, 0.25))
+            cols = self.columns((0.8, 0.2))
 
-            ProcessingSelector(parent=cols[0], page_id=page_id)
-            ProcessButton(parent=cols[1], page_id=page_id)
-            ResetButton(parent=cols[2], page_id=page_id)
+            ImageCaption(parent=cols[0], page_id=page_id)
+            DescribeButton(parent=cols[1], page_id=page_id)
 
         # If more than one image has been loaded
         elif len(self.session_state["images"]) > 1:
-            cols = self.columns((0.1, 0.4, 0.2, 0.2, 0.1))
+            cols = self.columns((0.1, 0.6, 0.2, 0.1))
 
             PrevButton(parent=cols[0], page_id=page_id)
-            ProcessingSelector(parent=cols[1], page_id=page_id)
-            ProcessButton(parent=cols[2], page_id=page_id)
-            ResetButton(parent=cols[3], page_id=page_id)
-            NextButton(parent=cols[4], page_id=page_id)
+            ImageCaption(parent=cols[1], page_id=page_id)
+            DescribeButton(parent=cols[2], page_id=page_id)
+            NextButton(parent=cols[3], page_id=page_id)
 
         # Apply a custom style to the buttons
         self.markdown(
@@ -140,15 +124,15 @@ class ImageProcessorOptions(Component):
         )
 
 
-class ProcessingSelector(SubComponent):
-    """ Represents a ProcessingSelector. """
+class ImageCaption(SubComponent):
+    """ Represents a ImageCaption. """
     def __init__(
         self,
         parent: st._DeltaGenerator,
         page_id: str
     ):
         """
-        Initializes a ProcessingSelector.
+        Initializes a ImageCaption.
 
         Parameters
         ----------
@@ -158,33 +142,26 @@ class ProcessingSelector(SubComponent):
                 id of the page containing the Component
         """
         # ----- Mother class ----- #
-        super(ProcessingSelector, self).__init__(parent, page_id)
+        super(ImageCaption, self).__init__(parent, page_id)
 
         # ----- Components ----- #
-        possible_processes = [""] + list(st.session_state.backend.image_processing_manager.keys())
-
-        # Retrieve the current image's option index
-        current_idx = possible_processes.index(
-            self.session_state["images"][self.session_state["image_idx"]].process_id
-        )
-
-        self.parent.selectbox(
-            label="processing selector", label_visibility="collapsed",
-            options=possible_processes,
-            index=current_idx,
-            key=f"{self.page_id}_selectbox"
+        self.parent.text_area(
+            label="caption", label_visibility="collapsed",
+            height=50,
+            value=self.session_state["images"][self.session_state["image_idx"]].caption,
+            key=f"{self.page_id}_text_area"
         )
 
 
-class ProcessButton(SubComponent):
-    """ Represents an ProcessButton. """
+class DescribeButton(SubComponent):
+    """ Represents an DescribeButton. """
     def __init__(
         self,
         parent: st._DeltaGenerator,
         page_id: str
     ):
         """
-        Initializes an ProcessButton.
+        Initializes a DescribeButton.
 
         Parameters
         ----------
@@ -194,64 +171,28 @@ class ProcessButton(SubComponent):
                 id of the page containing the Component
         """
         # ----- Mother class ----- #
-        super(ProcessButton, self).__init__(parent, page_id)
+        super(DescribeButton, self).__init__(parent, page_id)
 
         # ----- Components ----- #
         self.parent.button(
-            label="process",
+            label="describe",
             on_click=self.on_click,
             use_container_width=True,
             key=f"{self.parent.id}_{self.id}"
         )
 
     def on_click(self):
-        # Retrieves the processing id
-        process_id = st.session_state[f"{self.page_id}_selectbox"]
-        if process_id == "":
-            return
-
         # Applies the processing to the current image
-        self.session_state["images"][self.session_state["image_idx"]].modified_image = \
-            st.session_state.backend.image_processing_manager(process_id)(
-                # The image to process
-                image=self.session_state["images"][self.session_state["image_idx"]].image
-            )
-
-        # Sets the process id of the current image
-        self.session_state["images"][self.session_state["image_idx"]].process_id = process_id
-
-
-class ResetButton(SubComponent):
-    """ Represents an ResetButton. """
-    def __init__(
-        self,
-        parent: st._DeltaGenerator,
-        page_id: str
-    ):
-        """
-        Initializes a ResetButton.
-
-        Parameters
-        ----------
-            parent: st._DeltaGenerator
-                container of the SubComponent
-            page_id: str
-                id of the page containing the Component
-        """
-        # ----- Mother class ----- #
-        super(ResetButton, self).__init__(parent, page_id)
-
-        # ----- Components ----- #
-        self.parent.button(
-            label="reset",
-            on_click=self.on_click,
-            use_container_width=True,
-            key=f"{self.parent.id}_{self.id}"
+        caption = st.session_state.backend.image_captioning_manager("clip_interrogator")(
+            # The image to process
+            image=self.session_state["images"][self.session_state["image_idx"]].image
         )
 
-    def on_click(self):
-        # Reset the current image
-        self.session_state["images"][self.session_state["image_idx"]].reset()
+        # Updates the text area
+        st.session_state[f"{self.page_id}_text_area"] = caption
+
+        # Sets the caption of the current image
+        self.session_state["images"][self.session_state["image_idx"]].caption = caption
 
 
 class PrevButton(SubComponent):

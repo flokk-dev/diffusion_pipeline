@@ -17,14 +17,14 @@ from src.image_utils.image import ImageToProcess
 from src.app.component import ImageUploader
 
 
-class ImageProcessingPage(Page):
-    """ Represents an ImageProcessingPage. """
+class ImageGenerationPage(Page):
+    """ Represents an ImageGenerationPage. """
     def __init__(
         self
     ):
-        """ Initializes an ImageProcessingPage. """
+        """ Initializes an ImageGenerationPage. """
         # ----- Mother class ----- #
-        super(ImageProcessingPage, self).__init__(page_id="image_processing")
+        super(ImageGenerationPage, self).__init__(page_id="image_generation")
 
         # ----- Session state ----- #
         if "images" not in self.session_state:
@@ -71,24 +71,13 @@ class ImageDisplayer(Component):
         super(ImageDisplayer, self).__init__(page_id)
 
         # ----- Components ----- #
-        col1, col2 = self.columns((0.5, 0.5))
-
-        # Image
-        col1.image(
-            image=self.session_state["images"][self.session_state["image_idx"]].image,
-            caption="",
-            use_column_width=True
-        )
-
-        # Processed image
-        col2.image(
-            image=utils.resize_to_shape(
-                image=self.session_state["images"][self.session_state["image_idx"]].modified_image,
-                shape=self.session_state["images"][self.session_state["image_idx"]].image.shape
-            ),
-            caption="",
-            use_column_width=True
-        )
+        n = len(self.session_state["images"])
+        for image, col in zip(self.session_state["images"], self.colums([1/n for _ in range(n)])):
+            col.image(
+                image=image,
+                caption="",
+                use_column_width=True
+            )
 
 
 class ImageProcessorOptions(Component):

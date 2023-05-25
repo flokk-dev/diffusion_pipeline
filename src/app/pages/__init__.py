@@ -3,4 +3,5 @@ from .home import HomePage
 
 # Pages
 from .image_processing import ImageProcessingPage
-from .mask_fusion import MaskFusion
+from .image_captionning import ImageCaptioningPage
+from .image_generation import ImageGenerationPage

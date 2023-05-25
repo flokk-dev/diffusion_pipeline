@@ -7,12 +7,13 @@ Purpose:
 """
 
 # IMPORT: utils
+from typing import *
 from pynvml import *
 
 import datetime
 
 # IMPORT: dataset processing
-import PIL
+import cv2
 import numpy as np
 
 
@@ -27,61 +28,26 @@ def gpu_utilization():
     handle = nvmlDeviceGetHandleByIndex(0)
     info = nvmlDeviceGetMemoryInfo(handle)
 
-    return f"{(info.used / 1024**3):.3f}Go"
+    return f"{(info.used / 1024 ** 3):.3f}Go"
 
 
-# ---------- OBJECTS ---------- #
-
-class Image:
-    """ Represents an Image. """
-    def __init__(
-        self,
-        image_id: int,
-        image_path: str
-    ):
-        """
-        Initializes an Image.
-
-        Parameters
-        ----------
-            image_id: int
-                id of the image
-            image_path: str
-                path of the image
-        """
-        # ----- Attributes ----- #
-        self.id: int = image_id
-        self.path: str = image_path
-
-        # Image
-        self.image: np.ndarray = np.array(PIL.Image.open(image_path).convert("RGB"))
+# ---------- DATA PROCESSING ---------- #
+def resize_to_shape(image: np.ndarray, shape: Tuple[int]) -> np.ndarray:
+    return cv2.resize(image, (shape[1], shape[0]), interpolation=cv2.INTER_LANCZOS4)
 
 
-class ImageToProcess(Image):
-    """ Represents an ImageToProcess. """
-    def __init__(
-        self,
-        image_id: int,
-        image_path: str
-    ):
-        """
-        Initializes an ImageToProcess.
+def resize_image(image: np.ndarray, resolution: int):
+    H, W, C = image.shape
+    H = float(H)
+    W = float(W)
+    k = float(resolution) / min(H, W)
+    H *= k
+    W *= k
+    H = int(np.round(H / 64.0)) * 64
+    W = int(np.round(W / 64.0)) * 64
 
-        Parameters
-        ----------
-            image_id: int
-                id of the image
-            image_path: str
-                path of the image
-        """
-        # ----- Mother class ----- #
-        super(ImageToProcess, self).__init__(image_id, image_path)
-
-        # ----- Attributes ----- #
-        self.process_id: str = ""
-        self.modified_image: np.ndarray = np.zeros_like(self.image)
-
-    def reset(self):
-        """ Resets the modified image. """
-        self.process_id = ""
-        self.modified_image = np.zeros_like(self.image)
+    return cv2.resize(
+        image,
+        (W, H),
+        interpolation=cv2.INTER_LANCZOS4 if k > 1 else cv2.INTER_AREA
+    )

@@ -14,93 +14,15 @@ from PIL import Image
 import torch
 
 # IMPORT: deep learning
-from diffusers import \
-    StableDiffusionPipeline as HFStableDiffusionPipeline, \
-    StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
+from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 
 # IMPORT: project
-from .diffusion_pipeline import DiffusionPipeline
+from src.image_utils.image_generation.image_generator import ImageGenerator
 
 
-class StableDiffusionPipeline(DiffusionPipeline):
+class ControlNet(ImageGenerator):
     """
-    Represents a StableDiffusionPipeline.
-
-    Attributes
-    ----------
-        _pipeline: HFDiffusionPipeline
-            diffusion pipeline needed to generate images
-    """
-
-    def __init__(
-        self,
-        pipeline_path: str = "runwayml/stable-diffusion-v1-5"
-    ):
-        """
-        Initializes a StableDiffusionPipeline.
-
-        Parameters
-        ----------
-            pipeline_path: str
-                path to the pretrained pipeline
-        """
-        # ----- Mother Class ----- #
-        super(StableDiffusionPipeline, self).__init__(pipeline_path)
-
-        # ----- Attributes ----- #
-        # Pipeline
-        self._pipeline: HFStableDiffusionPipeline = HFStableDiffusionPipeline.from_pretrained(
-            pretrained_model_name_or_path=pipeline_path,
-            torch_dtype=torch.float16
-        )
-
-        # Options
-        self._pipeline.enable_model_cpu_offload()
-
-    def __call__(
-        self,
-        prompt: str,
-        negative_prompt: str,
-        latents: torch.Tensor = None,
-        num_images: int = 1,
-        seed: int = None
-    ) -> Image.Image | List[Image.Image]:
-        """
-        Parameters
-        ----------
-            prompt: str
-                prompt from which to generate images
-            negative_prompt: str
-                prompt to avoid during the generation
-            latents: torch.Tensor
-                random noise from which to generate images
-            num_images: int
-                number of images to generate
-            seed: int
-                random seed used for the generation
-
-        Returns
-        ----------
-            Image.Image | List[Image.Image]
-                generated images
-        """
-        # Generates images
-        images: List[Image.Image] = self._pipeline(
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            latents=latents,
-            num_images_per_prompt=num_images,
-            generator=torch.Generator(device="cpu").manual_seed(seed)
-        ).images
-
-        if num_images == 1:
-            return images[0]
-        return images
-
-
-class ControlDiffusionPipeline(DiffusionPipeline):
-    """
-    Represents a ControlDiffusionPipeline.
+    Represents a ControlNet.
 
     Attributes
     ----------
@@ -114,7 +36,7 @@ class ControlDiffusionPipeline(DiffusionPipeline):
         pipeline_path: str = "runwayml/stable-diffusion-v1-5"
     ):
         """
-        Initializes a ControlDiffusionPipeline.
+        Initializes a ControlNet.
 
         Parameters
         ----------
@@ -124,7 +46,7 @@ class ControlDiffusionPipeline(DiffusionPipeline):
                 path to the pretrained pipeline
         """
         # ----- Mother Class ----- #
-        super(ControlDiffusionPipeline, self).__init__(pipeline_path)
+        super(ControlNet, self).__init__()
 
         # ----- Attributes ----- #
         # Pipeline

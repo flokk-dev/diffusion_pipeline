@@ -14,34 +14,24 @@ from PIL import Image
 import torch
 
 # IMPORT: deep learning
-from diffusers import DiffusionPipeline as HFDiffusionPipeline
+from diffusers import DiffusionPipeline
 
 
-class DiffusionPipeline:
+class ImageGenerator:
     """
-    Represents a DiffusionPipeline.
+    Represents an ImageGenerator.
 
     Attributes
     ----------
-        _pipeline: HFDiffusionPipeline
+        _pipeline: DiffusionPipeline
             diffusion pipeline needed to generate images
     """
 
-    def __init__(
-        self,
-        pipeline_path: str
-    ):
-        """
-        Initializes a DiffusionPipeline.
-
-        Parameters
-        ----------
-            pipeline_path: str
-                path to the pretrained pipeline
-        """
+    def __init__(self):
+        """ Initializes an ImageGenerator. """
         # ----- Attributes ----- #
         # Pipeline
-        self._pipeline: HFDiffusionPipeline = None
+        self._pipeline: DiffusionPipeline = None
 
     def __call__(
         self,

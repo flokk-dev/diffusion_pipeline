@@ -13,15 +13,15 @@ from typing import *
 import streamlit as st
 
 # IMPORT: project
-from utils import ImageToProcess
-from src.app.component import Page, Component
+from src.app.component import Component
 
 
 class ImageUploader(Component):
     """ Represents a ImageUploader. """
     def __init__(
         self,
-        page_id: str
+        page_id: str,
+        image_type: type
     ):
         """
         Initializes a ImageUploader.
@@ -30,22 +30,27 @@ class ImageUploader(Component):
         ----------
             page_id: str
                 id of the page containing the Component
+            image_type: type
+                type of the image to instantiate
         """
         # ----- Mother class ----- #
         super(ImageUploader, self).__init__(page_id)
 
+        # ----- Attributes ----- #
+        self._image_type = image_type
+
         # ----- Components ----- #
         self.file_uploader(
-            label="", label_visibility="collapsed",
-            key=self.id,
+            label="file uploader", label_visibility="collapsed",
             type=["jpg", "jpeg", "png"],
             on_change=self.on_change,
+            key=f"{self.page_id}_file_uploader",
             accept_multiple_files=True
         )
 
     def on_change(self):
         # Retrieves the uploaded images in the file uploader
-        uploaded_images = st.session_state[self.id][:3]
+        uploaded_images = st.session_state[f"{self.page_id}_file_uploader"][:3]
 
         # If there is no more image uploaded
         if not uploaded_images:
@@ -109,7 +114,7 @@ class ImageUploader(Component):
             if uploaded_image.id not in in_memory_ids:
                 # Adds the image in memory
                 self.session_state["images"].append(
-                    ImageToProcess(image_id=uploaded_image.id, image_path=uploaded_image)
+                    self._image_type(image_id=uploaded_image.id, image_path=uploaded_image)
                 )
 
                 # Updates index of the new current image

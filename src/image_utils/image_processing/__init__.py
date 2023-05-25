@@ -1,2 +1,5 @@
+# Manager
+from .manager import ImageProcessorManager
+
+# Image processor
 from .image_processor import ImageProcessor
-from .image_processors import Canny, Pose

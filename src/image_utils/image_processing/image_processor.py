@@ -6,6 +6,9 @@ Version: 1.0
 Purpose:
 """
 
+# IMPORT: utils
+from typing import *
+
 # IMPORT: data processing
 import numpy as np
 
@@ -18,8 +21,7 @@ class ImageProcessor:
     ):
         """ Initializes a ImageProcessor. """
         # ----- Attributes ----- #
-        self._width: int = 1920
-        self._height: int = 1080
+        self._processor: Any = None
 
     def __call__(
         self,
@@ -29,7 +31,7 @@ class ImageProcessor:
         Parameters
         ----------
             image: np.ndarray
-                image to pre-process
+                image to process
 
         Returns
         ----------
