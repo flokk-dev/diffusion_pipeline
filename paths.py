@@ -29,3 +29,9 @@ DATA = os.path.join(RESOURCES, "data")
 IMAGES = os.path.join(DATA, "images")
 MASKS = os.path.join(DATA, "masks")
 
+
+# ----- SRC ----- #
+SRC = os.path.join(ROOT, "src")
+
+# Pages
+PAGES = os.path.join(SRC, "app", "pages")

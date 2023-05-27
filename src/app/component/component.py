@@ -14,20 +14,26 @@ class Page:
     """ Represents a Page. """
     def __init__(
         self,
-        page_id: str
+        id_: str,
+        parent: st._DeltaGenerator
     ):
         """
-        Initializes a Component.
+        Initializes a Page.
 
         Parameters
         ----------
-            page_id: str
+            id_: str
                 id of the page
+            parent: st._DeltaGenerator
+                parent of the page
         """
         # ----- Attributes ----- #
-        self.id = page_id
+        self.id = id_
 
-        # Copies the st.session_state
+        # Parent
+        self.parent = parent
+
+        # ----- Session state ----- #
         if self.id not in st.session_state:
             st.session_state[self.id] = dict()
         self.session_state = st.session_state[self.id]
@@ -35,55 +41,27 @@ class Page:
 
 class Component(st._DeltaGenerator):
     """ Represents a Component. """
-    id = 0
-
     def __init__(
         self,
-        page_id: str
+        page: Page,
+        parent: st._DeltaGenerator
     ):
         """
         Initializes a Component.
 
         Parameters
         ----------
-            page_id: str
-                id of the page containing the Component
+            page: Page
+                page of the component
+            parent: st._DeltaGenerator
+                parent of the component
         """
         # ----- Mother class ----- #
         super(Component, self).__init__()
 
         # ----- Attributes ----- #
-        self.id += 1
-        self.page_id = page_id
+        self.page = page
+        self.session_state = st.session_state[self.page.id]
 
-        self.session_state = st.session_state[page_id]
-
-
-class SubComponent(st._DeltaGenerator):
-    """ Represents a SubComponent. """
-    id = 0
-
-    def __init__(
-        self,
-        parent: st._DeltaGenerator,
-        page_id: str
-    ):
-        """
-        Initializes a SubComponent.
-
-        Parameters
-        ----------
-            parent: st._DeltaGenerator
-                container of the SubComponent
-            page_id: str
-                id of the page containing the Component
-        """
-        # ----- Mother class ----- #
-        super(SubComponent, self).__init__(parent=parent)
-
-        # ----- Attributes ----- #
-        self.id += 1
-        self.page_id = page_id
-
+        # Parent
         self.parent = parent
-        self.session_state = st.session_state[page_id]

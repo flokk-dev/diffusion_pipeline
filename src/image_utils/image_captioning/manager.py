@@ -11,7 +11,7 @@ from typing import *
 
 # IMPORT: project
 from .image_captioner import ImageCaptioner
-from .image_captioners import ClipInterrogator
+from .image_captioners import ClipInterrogator, Promptist
 
 
 class ImageCaptionerManager(Dict):
@@ -25,6 +25,7 @@ class ImageCaptionerManager(Dict):
 
         # Image generators
         self["clip_interrogator"]: ClipInterrogator = ClipInterrogator
+        self["promptist"]: Promptist = Promptist
 
     def __call__(
         self,

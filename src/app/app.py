@@ -7,8 +7,10 @@ Purpose:
 """
 
 # IMPORT: utils
-import PIL
+import pyautogui
 import json
+
+import PIL
 
 # IMPORT: UI
 import streamlit as st
@@ -17,23 +19,26 @@ import streamlit as st
 import paths
 
 from src.image_utils import Backend
-from src.app.pages import HomePage, ImageProcessingPage, ImageCaptioningPage, ImageGenerationPage
+from src.app.pages import ImageProcessing, ImageCaptioning, ImageGeneration
 
 
 class App:
     """ Represents an App. """
     _PAGES = {
-        "home": HomePage,
-        "image_processing": ImageProcessingPage,
-        "image_captioning": ImageCaptioningPage,
-        "image_generation": ImageGenerationPage
+        "IMAGE PROCESSING": ImageProcessing,
+        "IMAGE CAPTIONING": ImageCaptioning,
+        "IMAGE GENERATION": ImageGeneration
     }
 
     def __init__(
             self
     ):
         """ Initializes an App. """
-        st.set_page_config(page_title="Aimpower", page_icon=PIL.Image.open(paths.FAVICON))
+        st.set_page_config(
+            page_title="Aimpower",
+            page_icon=PIL.Image.open(paths.FAVICON),
+            layout="wide"
+        )
 
         # ----- Session states ----- #
         # Languages
@@ -47,72 +52,27 @@ class App:
         if "backend" not in st.session_state:
             st.session_state.backend = Backend()
 
-        # Current page
-        if "current_page" not in st.session_state:
-            st.session_state.current_page = "home"
-
         # ----- COMPONENTS ----- #
-        # Current page
-        self._PAGES[st.session_state.current_page]()
+        w, _ = pyautogui.size()
+        middle, side = 1250 / w, (1 - (1050 / w)) / 2
 
-        # Sidebar
-        Sidebar()
+        # Application
+        _, app_container, _ = st.columns((side, middle, side))
+        for page, tab in zip(self._PAGES.values(), app_container.tabs(self._PAGES.keys())):
+            page(tab)
 
-
-class Sidebar:
-    """ Represents a Sidebar. """
-    def __init__(
-            self
-    ):
-        """ Initializes a Sidebar. """
-        # ----- COMPONENTS ----- #
-        # Pages
-        st.sidebar.button(
-            label="Home",
-            on_click=self.on_click, args=("home", )
-        )
-
-        with st.container():
-            st.sidebar.markdown("---")
-
-            st.sidebar.button(
-                label="Image processing",
-                on_click=self.on_click, args=("image_processing", )
-            )
-
-            st.sidebar.button(
-                label="Image captioning",
-                on_click=self.on_click, args=("image_captioning", )
-            )
-
-            st.sidebar.button(
-                label="Image generation",
-                on_click=self.on_click, args=("image_generation", )
-            )
-
-        # Apply a custom style to the buttons
+        # Style
         st.markdown(
-            body="""<style>                
+            body="""<style>
                 div.stButton > button {
-                    border: None;
-                    background-color: #262730;
+                    border-color: #FF4B4B;
+                    color: #FF4B4B;
                 },
-                div.stButton > button: hover {
-                    border: None;
-                    background-color: #ffffff;
+                
+                div.stButton > button:hover {
+                    border-color: #4BFF4B;
+                    color: #4BFF4B;
                 }
             </style>""",
             unsafe_allow_html=True
         )
-
-    def on_click(
-        self,
-        page_id: str
-    ):
-        """
-        Parameters
-        ----------
-            page_id: str
-                id of the page to go to
-        """
-        st.session_state.current_page = page_id

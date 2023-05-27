@@ -1,5 +1,5 @@
 # Component
-from .component import Page, Component, SubComponent
+from .component import Page, Component
 
 # Components
 from .components import ImageUploader

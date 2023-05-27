@@ -8,19 +8,21 @@ Purpose:
 
 # IMPORT: utils
 from typing import *
+from copy import deepcopy
 
 # IMPORT: UI
 import streamlit as st
 
 # IMPORT: project
-from src.app.component import Component
+from src.app.component import Page, Component
 
 
 class ImageUploader(Component):
     """ Represents a ImageUploader. """
     def __init__(
         self,
-        page_id: str,
+        page: Page,
+        parent: st._DeltaGenerator,
         image_type: type
     ):
         """
@@ -28,29 +30,30 @@ class ImageUploader(Component):
 
         Parameters
         ----------
-            page_id: str
-                id of the page containing the Component
-            image_type: type
-                type of the image to instantiate
+            page: Page
+                page of the component
+            parent: st._DeltaGenerator
+                parent of the component
         """
         # ----- Mother class ----- #
-        super(ImageUploader, self).__init__(page_id)
+        super(ImageUploader, self).__init__(page=page, parent=parent)
 
         # ----- Attributes ----- #
         self._image_type = image_type
 
         # ----- Components ----- #
-        self.file_uploader(
+        # with self.parent.expander(label="", expanded=True):
+        self.parent.file_uploader(
             label="file uploader", label_visibility="collapsed",
+            key=f"{self.page.id}_file_uploader",
             type=["jpg", "jpeg", "png"],
             on_change=self.on_change,
-            key=f"{self.page_id}_file_uploader",
             accept_multiple_files=True
         )
 
     def on_change(self):
         # Retrieves the uploaded images in the file uploader
-        uploaded_images = st.session_state[f"{self.page_id}_file_uploader"][:3]
+        uploaded_images = st.session_state[f"{self.page.id}_file_uploader"][:3]
 
         # If there is no more image uploaded
         if not uploaded_images:
@@ -114,7 +117,7 @@ class ImageUploader(Component):
             if uploaded_image.id not in in_memory_ids:
                 # Adds the image in memory
                 self.session_state["images"].append(
-                    self._image_type(image_id=uploaded_image.id, image_path=uploaded_image)
+                    self._image_type(uploaded_image)
                 )
 
                 # Updates index of the new current image

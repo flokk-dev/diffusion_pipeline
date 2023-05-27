@@ -6,6 +6,9 @@ Version: 1.0
 Purpose:
 """
 
+# IMPORT: utils
+from typing import *
+
 # IMPORT: dataset processing
 import numpy as np
 
@@ -17,21 +20,18 @@ class Mask(Image):
     """ Represents a Mask. """
     def __init__(
         self,
-        image_id: int,
-        image_path: str
+        image: Any
     ):
         """
         Initializes a Mask.
 
         Parameters
         ----------
-            image_id: int
-                id of the image
-            image_path: str
-                path of the image
+            image: Any
+                image to load
         """
         # ----- Mother class ----- #
-        super(Mask, self).__init__(image_id, image_path)
+        super(Mask, self).__init__(image)
 
         # ----- Attributes ----- #
         self.image = np.array(self.image)
@@ -41,51 +41,47 @@ class ImageToDescribe(Image):
     """ Represents an ImageToDescribe. """
     def __init__(
         self,
-        image_id: int,
-        image_path: str
+        image: Any
     ):
         """
         Initializes an ImageToDescribe.
 
         Parameters
         ----------
-            image_id: int
-                id of the image
-            image_path: str
-                path of the image
+            image: Any
+                image to load
         """
         # ----- Mother class ----- #
-        super(ImageToDescribe, self).__init__(image_id, image_path)
+        super(ImageToDescribe, self).__init__(image)
 
         # ----- Attributes ----- #
         self.caption: str = ""
+        self.improved_caption: str = ""
 
 
 class ImageToProcess(Image):
     """ Represents an ImageToProcess. """
     def __init__(
         self,
-        image_id: int,
-        image_path: str
+        image: Any
     ):
         """
         Initializes an ImageToProcess.
 
         Parameters
         ----------
-            image_id: int
-                id of the image
-            image_path: str
-                path of the image
+            image: Any
+                image to load
         """
         # ----- Mother class ----- #
-        super(ImageToProcess, self).__init__(image_id, image_path)
+        super(ImageToProcess, self).__init__(image)
+        self.image = np.array(self.image)
 
         # ----- Attributes ----- #
         self.process_id: str = ""
-        self.modified_image: np.ndarray = np.zeros_like(self.image)
+        self.mask: np.ndarray = np.zeros_like(self.image)
 
     def reset(self):
         """ Resets the modified image. """
         self.process_id = ""
-        self.modified_image = np.zeros_like(self.image)
+        self.mask = np.zeros_like(self.image)

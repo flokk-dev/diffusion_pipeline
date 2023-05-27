@@ -7,11 +7,7 @@ Purpose:
 """
 
 # IMPORT: utils
-from typing import *
-from PIL import Image
-
-# IMPORT: data processing
-import torch
+import PIL
 
 # IMPORT: deep learning
 from clip_interrogator import Config, Interrogator
@@ -30,7 +26,7 @@ class ClipInterrogator(ImageCaptioner):
             model needed to generate captions
     """
     def __init__(self):
-        """ Initializes an ClipInterrogator. """
+        """ Initializes a ClipInterrogator. """
         # ----- Mother class ----- #
         super(ClipInterrogator, self).__init__()
 
@@ -47,14 +43,14 @@ class ClipInterrogator(ImageCaptioner):
 
     def __call__(
         self,
-        image: torch.Tensor,
+        image: PIL.Image,
         mode: str = None,
         max_flavor: int = 10
     ) -> str:
         """
         Parameters
         ----------
-            image: torch.Tensor
+            image: PIL.Image
                 image to generate caption from
             mode: str
                 mode of the captioning
