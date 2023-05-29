@@ -19,12 +19,12 @@ from src.image_utils.image_processing.image_processor import ImageProcessor
 
 class ZoeProcessor(ImageProcessor):
     """ Represents an ZoeProcessor. """
+    control_net_id: str = None
 
     def __init__(
             self
     ):
         """ Initializes an ZoeProcessor. """
-        # ----- Mother class ----- #
         super(ZoeProcessor, self).__init__()
 
         # ----- Attributes ----- #
@@ -49,4 +49,7 @@ class ZoeProcessor(ImageProcessor):
                 PidiNet mask
         """
         # Processes the image
-        return self._processor(input_image=image, return_pil=False)
+        return self._resize(
+            self._processor(input_image=image, return_pil=False),
+            shape=image.shape
+        )

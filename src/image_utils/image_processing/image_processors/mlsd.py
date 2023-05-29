@@ -19,16 +19,15 @@ from src.image_utils.image_processing.image_processor import ImageProcessor
 
 class MLSDProcessor(ImageProcessor):
     """ Represents an MLSDProcessor. """
+    control_net_id: str = "lllyasviel/sd-controlnet-mlsd"
 
     def __init__(
             self
     ):
         """ Initializes an MLSDProcessor. """
-        # ----- Mother class ----- #
         super(MLSDProcessor, self).__init__()
 
         # ----- Attributes ----- #
-        # Processor
         self._processor = MLSDdetector.from_pretrained(
             pretrained_model_or_path="lllyasviel/Annotators"
         )
@@ -49,4 +48,7 @@ class MLSDProcessor(ImageProcessor):
                 MLSD mask
         """
         # Processes the image
-        return self._processor(input_image=image, return_pil=False)
+        return self._resize(
+            self._processor(input_image=image, return_pil=False),
+            shape=image.shape
+        )

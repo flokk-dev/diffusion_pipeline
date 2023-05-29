@@ -9,7 +9,7 @@ Purpose:
 # IMPORT: project
 from .image_captioning import ImageCaptionerManager
 from .image_processing import ImageProcessorManager
-from .image_generation import ImageGeneratorManager
+from .image_generation.image_generators import ControlNet
 
 
 class Backend:
@@ -22,8 +22,8 @@ class Backend:
             manager of the different image captioning method
         image_processing_manager: ImageProcessorManager
             manager of the different image processing method
-        image_generation_manager: ImageGeneratorManager
-            manager of the different image generation method
+        control_net: ControlNet
+            ...
     """
     def __init__(
         self
@@ -37,4 +37,8 @@ class Backend:
         self.image_processing_manager = ImageProcessorManager()
 
         # Image generation
-        self.image_generation_manager = ImageGeneratorManager()
+        self.control_net = ControlNet
+
+    def reset_control_net(self):
+        """ Resets the ControlNet. """
+        self.control_net = ControlNet

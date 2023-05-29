@@ -27,7 +27,6 @@ class ClipInterrogator(ImageCaptioner):
     """
     def __init__(self):
         """ Initializes a ClipInterrogator. """
-        # ----- Mother class ----- #
         super(ClipInterrogator, self).__init__()
 
         # ----- Attributes ----- #
@@ -40,6 +39,7 @@ class ClipInterrogator(ImageCaptioner):
 
         # Model
         self._model: Interrogator = Interrogator(model_config)
+        self._model.device = "cpu"
 
     def __call__(
         self,
@@ -62,9 +62,15 @@ class ClipInterrogator(ImageCaptioner):
             str
                 caption that describes the image
         """
-        if mode == "best":
-            return self._model.interrogate(image, max_flavors=max_flavor)
-        elif mode == "fast":
-            return self._model.interrogate_fast(image)
+        image = PIL.Image.fromarray(image)
 
-        return self._model.interrogate_classic(image)
+        self._model.device = "cuda"
+        if mode == "best":
+            image = self._model.interrogate(image, max_flavors=max_flavor)
+        elif mode == "fast":
+            image = self._model.interrogate_fast(image)
+        else:
+            image = self._model.interrogate_classic(image)
+
+        self._model.device = "cpu"
+        return image

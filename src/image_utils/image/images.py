@@ -18,70 +18,66 @@ from .image import Image
 
 class Mask(Image):
     """ Represents a Mask. """
-    def __init__(
-        self,
-        image: Any
-    ):
-        """
-        Initializes a Mask.
-
-        Parameters
-        ----------
-            image: Any
-                image to load
-        """
-        # ----- Mother class ----- #
-        super(Mask, self).__init__(image)
+    def __init__(self):
+        """ Initializes a Mask. """
+        super(Mask, self).__init__()
 
         # ----- Attributes ----- #
-        self.image = np.array(self.image)
+        self.processing: str = ""
+
+    def reset(self):
+        """ Resets the image. """
+        super().reset()
+
+        # process id
+        self.processing = ""
 
 
 class ImageToDescribe(Image):
     """ Represents an ImageToDescribe. """
-    def __init__(
-        self,
-        image: Any
-    ):
-        """
-        Initializes an ImageToDescribe.
-
-        Parameters
-        ----------
-            image: Any
-                image to load
-        """
-        # ----- Mother class ----- #
-        super(ImageToDescribe, self).__init__(image)
+    def __init__(self):
+        """ Initializes an ImageToDescribe. """
+        super(ImageToDescribe, self).__init__()
 
         # ----- Attributes ----- #
         self.caption: str = ""
-        self.improved_caption: str = ""
+
+    def reset(self):
+        """ Resets the image. """
+        super().reset()
+
+        # process id
+        self.caption = ""
 
 
 class ImageToProcess(Image):
     """ Represents an ImageToProcess. """
-    def __init__(
-        self,
-        image: Any
-    ):
+    def __init__(self):
+        """ Initializes an ImageToProcess. """
+        super(ImageToProcess, self).__init__()
+
+        # ----- Attributes ----- #
+        self.processing: str = ""
+        self.mask: np.ndarray = np.zeros_like(self.image)
+
+    def load(self, image: Any):
         """
-        Initializes an ImageToProcess.
+        Loads an Image.
 
         Parameters
         ----------
             image: Any
                 image to load
         """
-        # ----- Mother class ----- #
-        super(ImageToProcess, self).__init__(image)
-        self.image = np.array(self.image)
+        super().load(image)
 
-        # ----- Attributes ----- #
-        self.process_id: str = ""
-        self.mask: np.ndarray = np.zeros_like(self.image)
+        # Mask
+        self.mask = np.zeros_like(self.image)
 
     def reset(self):
-        """ Resets the modified image. """
-        self.process_id = ""
+        """ Resets the image. """
+        super().reset()
+
+        # process id
+        self.processing = ""
         self.mask = np.zeros_like(self.image)

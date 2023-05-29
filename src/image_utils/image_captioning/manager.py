@@ -20,7 +20,6 @@ class ImageCaptionerManager(Dict):
         self
     ):
         """ Initializes a ImageCaptionerManager. """
-        # ----- Mother class ----- #
         super(ImageCaptionerManager, self).__init__()
 
         # Image generators

@@ -19,16 +19,15 @@ from src.image_utils.image_processing.image_processor import ImageProcessor
 
 class LineartProcessor(ImageProcessor):
     """ Represents an LineartProcessor. """
+    control_net_id: str = None
 
     def __init__(
             self
     ):
         """ Initializes an LineartProcessor. """
-        # ----- Mother class ----- #
         super(LineartProcessor, self).__init__()
 
         # ----- Attributes ----- #
-        # Processor
         self._processor = LineartDetector.from_pretrained(
             pretrained_model_or_path="lllyasviel/Annotators"
         )
@@ -49,4 +48,8 @@ class LineartProcessor(ImageProcessor):
                 Lineart mask
         """
         # Processes the image
-        return self._processor(input_image=image, return_pil=False)
+        return self._resize(
+            self._processor(input_image=image, return_pil=False),
+            shape=image.shape
+        )
+

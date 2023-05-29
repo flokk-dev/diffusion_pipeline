@@ -19,16 +19,15 @@ from src.image_utils.image_processing.image_processor import ImageProcessor
 
 class SamProcessor(ImageProcessor):
     """ Represents an SamProcessor. """
+    control_net_id: str = "lllyasviel/sd-controlnet-seg"
 
     def __init__(
             self
     ):
         """ Initializes an SamProcessor. """
-        # ----- Mother class ----- #
         super(SamProcessor, self).__init__()
 
         # ----- Attributes ----- #
-        # Processor
         self._processor = SamDetector.from_pretrained(
             pretrained_model_or_path="segments-arnaud/sam_vit_h"
         )
@@ -49,6 +48,7 @@ class SamProcessor(ImageProcessor):
                 PidiNet mask
         """
         # Processes the image
-        return np.array(
-            self._processor(image=image)
+        return self._resize(
+            np.array(self._processor(image=image)),
+            shape=image.shape
         )

@@ -19,16 +19,15 @@ from src.image_utils.image_processing.image_processor import ImageProcessor
 
 class OpenPoseProcessor(ImageProcessor):
     """ Represents a OpenPoseProcessor. """
+    control_net_id: str = "lllyasviel/sd-controlnet-openpose"
 
     def __init__(
             self
     ):
         """ Initializes a OpenPoseProcessor. """
-        # ----- Mother class ----- #
         super(OpenPoseProcessor, self).__init__()
 
         # ----- Attributes ----- #
-        # Processor
         self._processor = OpenposeDetector.from_pretrained(
             pretrained_model_or_path="lllyasviel/Annotators"
         )
@@ -49,4 +48,7 @@ class OpenPoseProcessor(ImageProcessor):
                 Pose mask
         """
         # Processes the image
-        return self._processor(input_image=image, hand_and_face=True, return_pil=False)
+        return self._resize(
+            self._processor(input_image=image, return_pil=False),
+            shape=image.shape
+        )

@@ -32,9 +32,6 @@ def gpu_utilization():
 
 
 # ---------- DATA PROCESSING ---------- #
-def resize_to_shape(image: np.ndarray, shape: Tuple[int]) -> np.ndarray:
-    return cv2.resize(image, (shape[1], shape[0]), interpolation=cv2.INTER_LANCZOS4)
-
 
 def resize_image(image: np.ndarray, resolution: int):
     H, W, C = image.shape

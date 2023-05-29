@@ -29,10 +29,20 @@ class ControlNet(ImageGenerator):
         _pipeline: StableDiffusionControlNetPipeline
             diffusion pipeline needed to generate images
     """
+    CONTROL_NETS_IDS = {
+        "canny": "lllyasviel/sd-controlnet-canny",
+        "depth": "lllyasviel/sd-controlnet-depth",
+        "hed": "lllyasviel/sd-controlnet-hed",
+        "mlsd": "lllyasviel/sd-controlnet-mlsd",
+        "normal": "lllyasviel/sd-controlnet-normal",
+        "openpose": "lllyasviel/sd-controlnet-openpose",
+        "scribble": "lllyasviel/sd-controlnet-scribble",
+        "seg": "lllyasviel/sd-controlnet-seg",
+    }
 
     def __init__(
         self,
-        control_net: ControlNetModel | List[ControlNetModel],
+        processing_ids: List[str],
         pipeline_path: str = "runwayml/stable-diffusion-v1-5"
     ):
         """
@@ -40,20 +50,30 @@ class ControlNet(ImageGenerator):
 
         Parameters
         ----------
-            control_net: ControlNetModel | List[ControlNetModel]
-                control net
+            processing_ids: List[str]
+                ...
             pipeline_path: str
                 path to the pretrained pipeline
         """
-        # ----- Mother Class ----- #
         super(ControlNet, self).__init__()
 
         # ----- Attributes ----- #
+        # ControlNets
+        control_nets = [
+            ControlNetModel.from_pretrained(
+                pretrained_model_name_or_path=self.CONTROL_NETS_IDS[processing_id],
+                torch_dtype=torch.float16
+            )
+            for processing_id
+            in processing_ids
+        ]
+
         # Pipeline
         self._pipeline: StableDiffusionControlNetPipeline = StableDiffusionControlNetPipeline.from_pretrained(
             pretrained_model_name_or_path=pipeline_path,
-            controlnet=control_net,
-            torch_dtype=torch.float16
+            controlnet=control_nets,
+            torch_dtype=torch.float16,
+            safety_checker=None
         )
 
         # Scheduler
@@ -67,12 +87,12 @@ class ControlNet(ImageGenerator):
     def __call__(
         self,
         prompt: str,
-        negative_prompt: str,
-        images: List[torch.Tensor],
+        images: List[torch.FloatTensor],
+        negative_prompt: str = "",
         latents: torch.Tensor = None,
         weights: List[int] = None,
         num_images: int = 1,
-        seed: int = None
+        seed: int = 0
     ) -> Image.Image | List[Image.Image]:
         """
         Parameters
@@ -104,7 +124,7 @@ class ControlNet(ImageGenerator):
         images: List[Image.Image] = self._pipeline(
             prompt=prompt,
             negative_prompt=negative_prompt,
-            images=images,
+            image=images,
             latents=latents,
             num_images_per_prompt=num_images,
             controlnet_conditioning_scale=weights,

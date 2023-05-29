@@ -19,16 +19,15 @@ from src.image_utils.image_processing.image_processor import ImageProcessor
 
 class MediapipeFaceProcessor(ImageProcessor):
     """ Represents an MediapipeFaceProcessor. """
+    control_net_id: str = "lllyasviel/sd-controlnet-openpose"
 
     def __init__(
             self
     ):
         """ Initializes an MediapipeFaceProcessor. """
-        # ----- Mother class ----- #
         super(MediapipeFaceProcessor, self).__init__()
 
         # ----- Attributes ----- #
-        # Processor
         self._processor = MediapipeFaceDetector()
 
     def __call__(
@@ -47,4 +46,7 @@ class MediapipeFaceProcessor(ImageProcessor):
                 PidiNet mask
         """
         # Processes the image
-        return self._processor(image=image, return_pil=False)
+        return self._resize(
+            self._processor(image=image, return_pil=False),
+            shape=image.shape
+        )

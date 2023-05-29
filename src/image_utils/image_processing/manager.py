@@ -18,7 +18,6 @@ class ImageProcessorManager(Dict):
     """ Represents a ImageProcessorManager. """
     def __init__(self):
         """ Initializes a Backend. """
-        # ----- Mother class ----- #
         super(ImageProcessorManager, self).__init__()
 
         # Image processors
@@ -29,9 +28,9 @@ class ImageProcessorManager(Dict):
         self["mediapipe face"]: MediapipeFaceProcessor = MediapipeFaceProcessor
         self["midas"]: MidasProcessor = MidasProcessor
         self["mlsd"]: MLSDProcessor = MLSDProcessor
-        self["normal_bae"]: NormalBaeProcessor = NormalBaeProcessor
+        self["normal"]: NormalBaeProcessor = NormalBaeProcessor
         self["pidi"]: PidiNetProcessor = PidiNetProcessor
-        self["open pose"]: OpenPoseProcessor = OpenPoseProcessor
+        self["openpose"]: OpenPoseProcessor = OpenPoseProcessor
         self["sam"]: SamProcessor = SamProcessor
         self["shuffle"]: ContentShuffleProcessor = ContentShuffleProcessor
         self["zoe"]: ZoeProcessor = ZoeProcessor

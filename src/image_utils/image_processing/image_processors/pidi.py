@@ -19,16 +19,15 @@ from src.image_utils.image_processing.image_processor import ImageProcessor
 
 class PidiNetProcessor(ImageProcessor):
     """ Represents an PidiNetProcessor. """
+    control_net_id: str = None
 
     def __init__(
             self
     ):
         """ Initializes an PidiNetProcessor. """
-        # ----- Mother class ----- #
         super(PidiNetProcessor, self).__init__()
 
         # ----- Attributes ----- #
-        # Processor
         self._processor = PidiNetDetector.from_pretrained(
             pretrained_model_or_path="lllyasviel/Annotators"
         )
@@ -49,4 +48,7 @@ class PidiNetProcessor(ImageProcessor):
                 PidiNet mask
         """
         # Processes the image
-        return self._processor(input_image=image, return_pil=False)
+        return self._resize(
+            self._processor(input_image=image, return_pil=False),
+            shape=image.shape
+        )

@@ -19,12 +19,12 @@ from src.image_utils.image_processing.image_processor import ImageProcessor
 
 class ContentShuffleProcessor(ImageProcessor):
     """ Represents a ContentShuffleProcessor. """
+    control_net_id: str = None
 
     def __init__(
             self
     ):
         """ Initializes a ContentShuffleProcessor. """
-        # ----- Mother class ----- #
         super(ContentShuffleProcessor, self).__init__()
 
         # ----- Attributes ----- #
@@ -47,4 +47,7 @@ class ContentShuffleProcessor(ImageProcessor):
                 ContentShuffle mask
         """
         # Processes the image
-        return self._processor(input_image=image, return_pil=False)
+        return self._resize(
+            self._processor(input_image=image, return_pil=False),
+            shape=image.shape
+        )

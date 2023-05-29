@@ -29,7 +29,6 @@ class Promptist(ImageCaptioner):
 
     def __init__(self):
         """ Initializes a Promptist. """
-        # ----- Mother class ----- #
         super(Promptist, self).__init__()
 
         # ----- Attributes ----- #

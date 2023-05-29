@@ -20,7 +20,6 @@ class ImageGeneratorManager(Dict):
         self
     ):
         """ Initializes a ImageGeneratorManager. """
-        # ----- Mother class ----- #
         super(ImageGeneratorManager, self).__init__()
 
         # Image generators

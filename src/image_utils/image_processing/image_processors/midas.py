@@ -21,16 +21,15 @@ from src.image_utils.image_processing.image_processor import ImageProcessor
 
 class MidasProcessor(ImageProcessor):
     """ Represents an MidasProcessor. """
+    control_net_id: str = "lllyasviel/sd-controlnet-depth"
 
     def __init__(
             self
     ):
         """ Initializes an MidasProcessor. """
-        # ----- Mother class ----- #
         super(MidasProcessor, self).__init__()
 
         # ----- Attributes ----- #
-        # Processor
         self._processor = MidasDetector.from_pretrained(
             pretrained_model_or_path="lllyasviel/Annotators"
         )
@@ -58,6 +57,4 @@ class MidasProcessor(ImageProcessor):
 
         # Resizes the depth_map
         depth_map = np.stack((depth_map, depth_map, depth_map), axis=2)
-        depth_map = utils.resize_to_shape(image=depth_map, shape=image.shape)
-
-        return utils.resize_image(image=depth_map, resolution=512)
+        return self._resize(image=depth_map, shape=image.shape)

@@ -42,7 +42,6 @@ class StableDiffusion(ImageGenerator):
             pipeline_path: str
                 path to the pretrained pipeline
         """
-        # ----- Mother class ----- #
         super(StableDiffusion, self).__init__()
 
         # ----- Attributes ----- #

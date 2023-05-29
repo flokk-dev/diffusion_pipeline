@@ -18,16 +18,15 @@ from src.image_utils.image_processing.image_processor import ImageProcessor
 
 class CannyProcessor(ImageProcessor):
     """ Represents a CannyProcessor. """
+    control_net_id: str = "lllyasviel/sd-controlnet-canny"
 
     def __init__(
             self
     ):
         """ Initializes a CannyProcessor. """
-        # ----- Mother class ----- #
         super(CannyProcessor, self).__init__()
 
         # ----- Attributes ----- #
-        # Processor
         self._processor = CannyDetector()
 
     def __call__(
@@ -52,4 +51,7 @@ class CannyProcessor(ImageProcessor):
                 Canny mask
         """
         # Processes the image
-        return self._processor(image, low_threshold=low_threshold, high_threshold=high_threshold)
+        return self._resize(
+            self._processor(image, low_threshold=low_threshold, high_threshold=high_threshold),
+            shape=image.shape
+        )

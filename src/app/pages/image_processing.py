@@ -9,14 +9,9 @@ Purpose:
 # IMPORT: UI
 import streamlit as st
 
-# IMPORT: data processing
-import numpy as np
-
 # IMPORT: project
-import utils
-
 from src.app.component import Page, Component
-from src.image_utils.image import ImageToProcess
+from src.image_utils.image import Images, ImageToProcess
 from src.app.component import ImageUploader
 
 
@@ -27,25 +22,23 @@ class ImageProcessing(Page):
         parent
     ):
         """ Initializes an ImageProcessing. """
-        # ----- Mother class ----- #
         super(ImageProcessing, self).__init__(id_="image_processing", parent=parent)
 
         # ----- Session state ----- #
         if "images" not in self.session_state:
-            self.session_state["images"] = list()
+            self.session_state["images"] = Images(image_type=ImageToProcess)
 
         if "image_idx" not in self.session_state:
             self.session_state["image_idx"] = 0
 
         # ----- Components ----- #
-        # Image carousel
+        # Row n°1
         ImageCarousel(page=self, parent=self.parent)
 
+        # Row n°2
         cols = self.parent.columns((0.5, 0.5))
-        # Col n°1
-        ImageUploader(page=self, parent=cols[0], image_type=ImageToProcess)
 
-        # Col n°2
+        ImageUploader(page=self, parent=cols[0])
         ProcessingSelector(page=self, parent=cols[1])
 
 
@@ -66,42 +59,22 @@ class ImageCarousel(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        # ----- Mother class ----- #
         super(ImageCarousel, self).__init__(page=page, parent=parent)
 
         # ----- Components ----- #
-        # Verifies that there is uploaded images
-        if len(self.session_state["images"]) > 0:
-            image = self.session_state["images"][self.session_state["image_idx"]].image
-            image_name = self.session_state["images"][self.session_state["image_idx"]].name
+        # Retrieves the current image
+        image = self.session_state["images"][self.session_state["image_idx"]]
 
-            mask = utils.resize_to_shape(
-                image=self.session_state["images"][self.session_state["image_idx"]].mask,
-                shape=image.shape
-            )
-            if self.session_state["images"][self.session_state["image_idx"]].process_id == "":
-                mask_name = "empty_mask"
-            else:
-                mask_name = "mask"
-
-        else:
-            image = np.zeros((480, 640, 3))
-            image_name = "empty image"
-
-            mask = np.zeros_like(image)
-            mask_name = "empty_mask"
-
-        # Images
         with self.parent.expander("", expanded=True):
             cols = st.columns((0.5, 0.5))
 
-            # Image to process
-            cols[0].image(image=image, caption=image_name, use_column_width=True)
+            # Displays the current image
+            cols[0].image(image=image.image, caption=image.name, use_column_width=True)
 
-            # Processed image
-            cols[1].image(image=mask, caption=mask_name, use_column_width=True)
+            # Displays the mask of the current image
+            cols[1].image(image=image.mask, caption=image.processing, use_column_width=True)
 
-            # Slider
+            # Creates the slider allowing to navigate between the uploaded images
             if len(self.session_state["images"]) > 1:
                 st.slider(
                     label="slider", label_visibility="collapsed",
@@ -112,6 +85,7 @@ class ImageCarousel(Component):
                 )
 
     def on_change(self):
+        # Change the index of the current image according to the slider value
         self.session_state["image_idx"] = st.session_state[f"{self.page.id}_slider"]
 
 
@@ -132,48 +106,47 @@ class ProcessingSelector(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        # ----- Mother class ----- #
         super(ProcessingSelector, self).__init__(page=page, parent=parent)
 
         # ----- Components ----- #
-        options = list(st.session_state.backend.image_processing_manager.keys())
-
-        # Verifies that there is uploaded images
-        if len(self.session_state["images"]) > 0:
-            process_id = self.session_state["images"][self.session_state["image_idx"]].process_id
-            index = 0 if process_id == "" else options.index(process_id)
-        else:
-            index = 0
+        # Retrieves the processing options
+        options = [""] + list(st.session_state.backend.image_processing_manager.keys())
 
         with self.parent.form(key=f"{self.page.id}_form"):
-            # Selects the processing
+            # Creates the selectbox allowing to select a processing
             st.selectbox(
                 label="selectbox", label_visibility="collapsed",
                 key=f"{self.page.id}_selectbox",
                 options=options,
-                index=index
+                index=options.index(
+                    self.session_state["images"][self.session_state["image_idx"]].processing
+                )
             )
 
-            # Applies the processing
+            # Creates the button allowing to apply the processing
             st.form_submit_button(
-                label="Apply",
+                label="Apply the processing",
                 on_click=self.on_click,
                 use_container_width=True
             )
 
     def on_click(self):
-        if not len(self.session_state["images"]) > 0:
+        # If no image has been loaded
+        if len(self.session_state["images"]) == 0:
             return
 
-        # Retrieves the processing id
-        process_id = st.session_state[f"{self.page.id}_selectbox"]
+        # Retrieves the selected processing
+        processing = st.session_state[f"{self.page.id}_selectbox"]
+
+        # If no process has been selected
+        if processing == "":
+            return
 
         # Applies the processing to the current image
         self.session_state["images"][self.session_state["image_idx"]].mask = \
-            st.session_state.backend.image_processing_manager(process_id)(
-                # The image to process
+            st.session_state.backend.image_processing_manager(processing)(
                 image=self.session_state["images"][self.session_state["image_idx"]].image
             )
 
-        # Sets the process id of the current image
-        self.session_state["images"][self.session_state["image_idx"]].process_id = process_id
+        # Updates the processing of the current image
+        self.session_state["images"][self.session_state["image_idx"]].processing = processing

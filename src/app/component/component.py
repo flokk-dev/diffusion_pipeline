@@ -56,7 +56,6 @@ class Component(st._DeltaGenerator):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        # ----- Mother class ----- #
         super(Component, self).__init__()
 
         # ----- Attributes ----- #
