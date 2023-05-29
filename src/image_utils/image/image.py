@@ -39,7 +39,7 @@ class Image:
         self.id: int = image.id
         self.name: str = image.name
 
-        # Image
+        # Converts the image into an array
         self.image = np.array(PIL.Image.open(image).convert("RGB"))
 
     def reset(self):
@@ -55,7 +55,8 @@ class Images(list):
     """ Represents an Images. """
     def __init__(
         self,
-        image_type: type
+        image_type: type,
+        n_images: int = 3
     ):
         """
         Initializes an Images.
@@ -64,11 +65,13 @@ class Images(list):
         ----------
             image_type: type
                 type of the images
+            n_images: str
+                number of images to store
         """
         super(Images, self).__init__()
 
-        # Sets the number of images at 3
-        for _ in range(3):
+        # Creates a list of images
+        for _ in range(n_images):
             # Appends an image of the desired type
             self.append(image_type())
 

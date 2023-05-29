@@ -15,14 +15,14 @@ from src.image_utils.image import Images, ImageToProcess
 from src.app.component import ImageUploader
 
 
-class ImageProcessing(Page):
-    """ Represents an ImageProcessing. """
+class ImageProcessingPage(Page):
+    """ Represents an ImageProcessingPage. """
     def __init__(
         self,
         parent
     ):
-        """ Initializes an ImageProcessing. """
-        super(ImageProcessing, self).__init__(id_="image_processing", parent=parent)
+        """ Initializes an ImageProcessingPage. """
+        super(ImageProcessingPage, self).__init__(id_="image_processing", parent=parent)
 
         # ----- Session state ----- #
         if "images" not in self.session_state:
@@ -32,6 +32,10 @@ class ImageProcessing(Page):
             self.session_state["image_idx"] = 0
 
         # ----- Components ----- #
+        self.parent.info(
+            "This tool allows you to process an image in order to create an input for a ControlNet."
+        )
+
         # Row n°1
         ImageCarousel(page=self, parent=self.parent)
 

@@ -10,66 +10,50 @@ Purpose:
 import streamlit as st
 
 # IMPORT: data processing
-import cv2
 import numpy as np
-import PIL
 
 # IMPORT: project
 from src.app.component import Page, Component
 from src.app.component import ImageUploader
-from src.image_utils.image import Mask
+from src.image_utils.image import Images, Mask, Image
 
 
-class ImageGeneration(Page):
-    """ Represents an ImageGeneration. """
+class ImageGenerationPage(Page):
+    """ Represents an ImageGenerationPage. """
     def __init__(
         self,
         parent
     ):
-        """ Initializes an ImageGeneration. """
-        super(ImageGeneration, self).__init__(id_="image_generation", parent=parent)
+        """ Initializes an ImageGenerationPage. """
+        super(ImageGenerationPage, self).__init__(id_="image_generation", parent=parent)
 
         # ----- Session state ----- #
         if "images" not in self.session_state:
-            self.session_state["images"] = [Mask() for _ in range(3)]
-
-        if "image_idx" not in self.session_state:
-            self.session_state["image_idx"] = 0
-
-        if "prompt" not in self.session_state:
-            self.session_state["prompt"] = ""
-
-        if "generated_image" not in self.session_state:
-            self.session_state["generated_image"] = np.zeros((480, 640, 3))
+            self.session_state["images"] = Images(image_type=Mask)
 
         # ----- Components ----- #
-        # Row n°1
-        ImageDisplayer(page=self, parent=self.parent)
+        # Options
+        tabs = self.parent.tabs(["ControlNet", "LoRA", "Prompt", "Hyper-parameters"])
 
-        # Row n°2
-        cols = self.parent.columns((0.5, 0.5))
+        ControlNetSelector(page=self, parent=tabs[0])
+        Prompts(page=self, parent=tabs[2])
+        HyperParameters(page=self, parent=tabs[3])
 
-        ImageUploader(page=self, parent=cols[0])
-        MaskRanker(page=self, parent=cols[1])
-
-        self.parent.markdown("---")
-        # Row n°3
-        PromptImprovement(page=self, parent=self.parent)
-
-        self.parent.markdown("---")
-        # Row n°4
-        ImageGenerator(page=self, parent=self.parent)
+        # Generation
+        ImageGeneration(page=self, parent=self.parent)
 
 
-class ImageDisplayer(Component):
-    """ Represents an ImageDisplayer. """
+# ---------- CONTROLNET ---------- #
+
+class ControlNetSelector(Component):
+    """ Represents a ControlNetSelector. """
     def __init__(
         self,
         page: Page,
         parent: st._DeltaGenerator
     ):
         """
-        Initializes an ImageDisplayer.
+        Initializes a ControlNetSelector.
 
         Parameters
         ----------
@@ -78,30 +62,61 @@ class ImageDisplayer(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(ImageDisplayer, self).__init__(page=page, parent=parent)
+        super(ControlNetSelector, self).__init__(page=page, parent=parent)
+        self.parent.info(
+            "Here, you can load some masks that will then guide the generation using ControlNet."
+        )
+
+        # ----- Components ----- #
+        # Row n°1
+        MaskDisplayer(page=self.page, parent=self.parent)
+
+        # Row n°2
+        cols = self.parent.columns((0.5, 0.5))
+
+        ImageUploader(page=self.page, parent=cols[0])
+        MaskRanker(page=self.page, parent=cols[1])
+
+
+class MaskDisplayer(Component):
+    """ Represents a MaskDisplayer. """
+    def __init__(
+        self,
+        page: Page,
+        parent: st._DeltaGenerator
+    ):
+        """
+        Initializes a MaskDisplayer.
+
+        Parameters
+        ----------
+            page: Page
+                page of the component
+            parent: st._DeltaGenerator
+                parent of the component
+        """
+        super(MaskDisplayer, self).__init__(page=page, parent=parent)
 
         # ----- Components ----- #
         # Retrieves the processing options
         options = [""] + list(st.session_state.backend.control_net.CONTROL_NETS_IDS.keys())
-        print("HEEEEEEEERE")
+
         with self.parent.expander(label="", expanded=True):
+            # For each in memory image creates a column
             for idx, col in enumerate(st.columns([1 for _ in self.session_state["images"]])):
-                print(type(self.session_state["images"][idx].image))
-                print(self.session_state["images"][idx].image.shape)
-                # Creates the selectbox allowing to select a processing
+                # Displays the mask
+                col.image(
+                    image=self.session_state["images"][idx].image,
+                    use_column_width=True
+                )
+
+                # Creates the selectbox allowing to indicate the processing that gives the mask
                 col.selectbox(
                     label="selectbox", label_visibility="collapsed",
                     key=f"{self.page.id}_selectbox_{idx}",
                     options=options,
                     on_change=self.on_change, args=(idx, ),
                     index=options.index(self.session_state["images"][idx].processing)
-                )
-
-                # Displays the current image
-                col.image(
-                    image=self.session_state["images"][idx].image,
-                    caption=self.session_state["images"][idx].name,
-                    use_column_width=True
                 )
 
     def on_change(self, idx):
@@ -143,7 +158,7 @@ class MaskRanker(Component):
 
             # Creates the button allowing to rank the images
             st.form_submit_button(
-                label="Rank the images",
+                label="Rank the masks",
                 on_click=self.on_click,
                 use_container_width=True
             )
@@ -157,29 +172,41 @@ class MaskRanker(Component):
         if len(st.session_state[f"{self.page.id}_text_input"]) == 0:
             return
 
-        # Retrieves the masks ranking
-        ranks = [int(e) for e in st.session_state[f"{self.page.id}_text_input"].split("-")]
+        # If the number of ranked element is less than the number of masks
+        ranking = [int(idx) for idx in st.session_state[f"{self.page.id}_text_input"].split("-")]
+        if len(ranking) < len(self.session_state["images"]):
+            return
+
+        # Separates the valid and invalid indexes
+        valid_idx, invalid_idx = list(), list()
+        for idx in ranking:
+            if idx <= len(self.session_state["images"]) - 1:
+                valid_idx.append(idx)
+            else:
+                invalid_idx.append(idx)
 
         # Applies the ranking on the in memory images
+        new_images = [self.session_state["images"][idx] for idx in valid_idx + invalid_idx]
+        for idx, image in enumerate(self.session_state["images"]):
+            image = 
         self.session_state["images"] = [
-            self.session_state["images"][rank]
-            for rank
-            in ranks
+            self.session_state["images"][idx]
+            for idx
+            in valid_idx + invalid_idx
         ]
 
-        # Sets the current index according to the modifications
-        self.session_state["image_idx"] = ranks.index(self.session_state["image_idx"])
 
+# ---------- PROMPTS ---------- #
 
-class PromptImprovement(Component):
-    """ Represents an PromptImprovement. """
+class Prompts(Component):
+    """ Represents a Prompts. """
     def __init__(
         self,
         page: Page,
         parent: st._DeltaGenerator
     ):
         """
-        Initializes an PromptImprovement.
+        Initializes a Prompts.
 
         Parameters
         ----------
@@ -188,41 +215,224 @@ class PromptImprovement(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(PromptImprovement, self).__init__(page=page, parent=parent)
+        super(Prompts, self).__init__(page=page, parent=parent)
+        self.parent.info(
+            "Here, you can specify a prompt and a negative prompt (to avoid some key words) "
+            "that will then guide the generation."
+        )
 
         # ----- Components ----- #
-        with self.parent.form(key=f"{self.page.id}_form_1"):
-            # Creates the text_area in which to display the prompt needed to generate the image
+        cols = self.parent.columns([0.5, 0.5])
+
+        # Col n°1
+        Prompt(page=self.page, parent=cols[0])
+
+        # Col n°2
+        NegativePrompt(page=self.page, parent=cols[1])
+
+
+class Prompt(Component):
+    """ Represents a Prompt. """
+    def __init__(
+        self,
+        page: Page,
+        parent: st._DeltaGenerator
+    ):
+        """
+        Initializes a Prompt.
+
+        Parameters
+        ----------
+            page: Page
+                page of the component
+            parent: st._DeltaGenerator
+                parent of the component
+        """
+        super(Prompt, self).__init__(page=page, parent=parent)
+
+        # ----- Session state ----- #
+        if "prompt" not in self.session_state:
+            self.session_state["prompt"] = ""
+
+        # ----- Components ----- #
+        with self.parent.expander(label="", expanded=True):
+            # Creates the text_area allowing to specify the prompt
             st.text_area(
                 label="text_area", label_visibility="collapsed",
-                key=f"{self.page.id}_text_area",
+                key=f"{self.page.id}_prompt",
+                height=125,
+                placeholder="Here, you have to describe the content of the generation.",
                 value=self.session_state["prompt"],
-                height=125
+                on_change=self.on_change
             )
 
-            # Creates the button allowing to improve the caption
-            st.form_submit_button(
+            # Creates the button allowing to improve the prompt
+            st.button(
                 label="Improve the prompt",
                 on_click=self.on_click,
                 use_container_width=True
             )
 
     def on_change(self):
-        # Updates the content of the text area
-        self.session_state["prompt"] = st.session_state[f"{self.page.id}_text_area"]
+        # Assigns the value of the text_area to the prompt
+        self.session_state["prompt"] = st.session_state[f"{self.page.id}_prompt"]
 
     def on_click(self):
         # If the text_area containing the prompt to improve is empty
-        if st.session_state[f"{self.page.id}_text_area"] == "":
+        if st.session_state[f"{self.page.id}_prompt"] == "":
             return
 
         # Improves the prompt
-        prompt = st.session_state.backend.image_captioning_manager("promptist")(
-            prompt=st.session_state[f"{self.page.id}_text_area"]
+        st.session_state.backend.check_promptist()
+        prompt = st.session_state.backend.promptist(
+            prompt=st.session_state[f"{self.page.id}_prompt"]
         )
 
         # Updates the content of the text area
         self.session_state["prompt"] = prompt
+
+
+class NegativePrompt(Component):
+    """ Represents a NegativePrompt. """
+    def __init__(
+        self,
+        page: Page,
+        parent: st._DeltaGenerator
+    ):
+        """
+        Initializes a NegativePrompt.
+
+        Parameters
+        ----------
+            page: Page
+                page of the component
+            parent: st._DeltaGenerator
+                parent of the component
+        """
+        super(NegativePrompt, self).__init__(page=page, parent=parent)
+
+        # ----- Session state ----- #
+        if "negative_prompt" not in self.session_state:
+            self.session_state["negative_prompt"] = ""
+
+        # ----- Components ----- #
+        with self.parent.expander(label="", expanded=True):
+            # Creates the text_area allowing to specify the negative prompt
+            st.text_area(
+                label="text_area", label_visibility="collapsed",
+                key=f"{self.page.id}_negative_prompt",
+                height=125,
+                placeholder="Here, you have to specify what you don't want in your generation "
+                            "(key words).",
+                value=self.session_state["negative_prompt"],
+                on_change=self.on_change
+            )
+
+            # Creates the button allowing to load the default negative prompt
+            st.button(
+                label="Load default",
+                on_click=self.on_click,
+                use_container_width=True
+            )
+
+    def on_change(self):
+        # Assigns the value of the text_area to the negative prompt
+        self.session_state["negative_prompt"] = st.session_state[f"{self.page.id}_negative_prompt"]
+
+    def on_click(self):
+        # Loads the default negative prompt
+        self.session_state["negative_prompt"] = \
+            "monochrome, lowres, bad anatomy, worst quality, low quality"
+
+
+# ---------- HYPER-PARAMETERS ---------- #
+
+class HyperParameters(Component):
+    """ Represents a HyperParameters. """
+    def __init__(
+        self,
+        page: Page,
+        parent: st._DeltaGenerator
+    ):
+        """
+        Initializes a HyperParameters.
+
+        Parameters
+        ----------
+            page: Page
+                page of the component
+            parent: st._DeltaGenerator
+                parent of the component
+        """
+        super(HyperParameters, self).__init__(page=page, parent=parent)
+
+        # ----- Components ----- #
+        self.parent.info("bla bla")
+
+
+# ---------- IMAGE GENERATION ---------- #
+
+class ImageGeneration(Component):
+    """ Represents an ImageGeneration. """
+    def __init__(
+        self,
+        page: Page,
+        parent: st._DeltaGenerator
+    ):
+        """
+        Initializes an ImageGeneration.
+
+        Parameters
+        ----------
+            page: Page
+                page of the component
+            parent: st._DeltaGenerator
+                parent of the component
+        """
+        super(ImageGeneration, self).__init__(page=page, parent=parent)
+
+        # ----- Components ----- #
+        # Row n°1
+        ImageDisplayer(page=self.page, parent=self.parent)
+
+        # Row n°2
+        ImageGenerator(page=self.page, parent=self.parent)
+
+
+class ImageDisplayer(Component):
+    """ Represents an ImageDisplayer. """
+    def __init__(
+        self,
+        page: Page,
+        parent: st._DeltaGenerator
+    ):
+        """
+        Initializes an ImageDisplayer.
+
+        Parameters
+        ----------
+            page: Page
+                page of the component
+            parent: st._DeltaGenerator
+                parent of the component
+        """
+        super(ImageDisplayer, self).__init__(page=page, parent=parent)
+
+        # ----- Session state ----- #
+        if "generated_images" not in self.session_state:
+            self.session_state["generated_images"] = [np.zeros((480, 640, 3)) for _ in range(6)]
+
+        # ----- Components ----- #
+        with self.parent.expander(label="", expanded=True):
+            cols = st.columns([1, 1, 1])
+
+            # For each generated image
+            for idx, image in enumerate(self.session_state["generated_images"]):
+                # Display the generated image
+                cols[idx % 3].image(
+                    image=image,
+                    use_column_width=True
+                )
 
 
 class ImageGenerator(Component):
@@ -245,64 +455,49 @@ class ImageGenerator(Component):
         super(ImageGenerator, self).__init__(page=page, parent=parent)
 
         # ----- Components ----- #
-        # Displays the generated image
-        self.parent.image(
-            image=self.session_state["generated_image"],
-            caption="generated image",
-            use_column_width=True
-        )
-
-        # Creates the button allowing to generate an image
-        self.parent.button(
-            label="Generate image",
-            on_click=self.on_click,
-            use_container_width=True
-        )
+        with self.parent.form(key=f"{self.page.id}_form_3"):
+            # Creates the button allowing to generate an image
+            st.form_submit_button(
+                label="Generate image",
+                on_click=self.on_click,
+                use_container_width=True
+            )
 
     def on_click(self):
-        # If the text_area containing the prompt to use is empty
-        if st.session_state[f"{self.page.id}_text_area"] == "":
+        # If the prompt is empty
+        if self.session_state["prompt"] == "":
             return
-        prompt = st.session_state[f"{self.page.id}_text_area"]
-        print(prompt)
 
-        # Retrieves the processing used
-        processing_ids = list()
-        for image in self.session_state["images"]:
-            if image.processing != "":
-                processing_ids.append(image.processing)
-        print(processing_ids)
-        print(len(processing_ids))
-
-        # If the ControlNet has not been already instantiated
-        if isinstance(st.session_state.backend.control_net, type):
-            st.session_state.backend.control_net = st.session_state.backend.control_net(
-                processing_ids=processing_ids
+        # If no mask has been uploaded
+        if len(self.session_state["images"]) == 0:
+            # Generates images using basic StableDiffusion
+            st.session_state.backend.check_stable_diffusion()
+            generated_images = st.session_state.backend.stable_diffusion(
+                prompt=self.session_state["prompt"],
+                negative_prompt=self.session_state["negative_prompt"],
+                seed=1
             )
 
-        # Retrieves the input masks
-        input_masks = [
-            PIL.Image.fromarray(
-                cv2.resize(image.image, (512, 512), interpolation=cv2.INTER_LANCZOS4)
+        else:
+            # Retrieves the uploaded masks and their corresponding processing
+            input_masks, processing_ids = list(), list()
+            for idx in range(len(self.session_state["images"])):
+                # If an image has been uploaded without providing the processing used
+                if self.session_state["images"][idx].processing == "":
+                    return
+
+                input_masks.append(self.session_state["images"][idx])
+                processing_ids.append(self.session_state["images"][idx].processing)
+
+            # Generates images using ControlNet
+            st.session_state.backend.check_control_net(processing_ids=processing_ids)
+            generated_images = st.session_state.backend.control_net(
+                prompt="a white dog in front of a house, best quality",
+                negative_prompt="blur, monochrome, lowres, bad anatomy, worst quality, low quality",
+                images=input_masks,
+                seed=1
             )
-            for image
-            in self.session_state["images"]
-            if image.id is not None
-        ]
-        print(len(input_masks))
 
-        # Generates an image based on all the inputs
-        generated_image = st.session_state.backend.control_net(
-            prompt=prompt,
-            negative_prompt="",
-            images=input_masks,
-            weights=[1. for _ in input_masks],
-            seed=0
-        )
-        generated_image = cv2.resize(
-            np.array(generated_image), (1000, 600), interpolation=cv2.INTER_LANCZOS4
-        )
-        print(generated_image.shape)
-
-        # Updates the processing of the current image
-        self.session_state["generated_image"] = generated_image
+        # Updates the in memory generated images
+        for idx, image in enumerate(generated_images):
+            self.session_state["generated_images"][idx] = np.array(image)

@@ -18,14 +18,14 @@ from src.app.component import Page, Component
 
 
 class ImageUploader(Component):
-    """ Represents a ImageUploader. """
+    """ Represents an ImageUploader. """
     def __init__(
         self,
         page: Page,
         parent: st._DeltaGenerator
     ):
         """
-        Initializes a ImageUploader.
+        Initializes an ImageUploader.
 
         Parameters
         ----------

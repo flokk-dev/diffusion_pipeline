@@ -19,15 +19,15 @@ import streamlit as st
 import paths
 
 from src.image_utils import Backend
-from src.app.pages import ImageProcessing, ImageCaptioning, ImageGeneration
+from src.app.pages import ImageProcessingPage, ImageCaptioningPage, ImageGenerationPage
 
 
 class App:
     """ Represents an App. """
     _PAGES = {
-        "IMAGE PROCESSING": ImageProcessing,
-        "IMAGE CAPTIONING": ImageCaptioning,
-        "IMAGE GENERATION": ImageGeneration
+        "IMAGE PROCESSING": ImageProcessingPage,
+        "IMAGE CAPTIONING": ImageCaptioningPage,
+        "IMAGE GENERATION": ImageGenerationPage
     }
 
     def __init__(
@@ -54,12 +54,12 @@ class App:
 
         # ----- COMPONENTS ----- #
         w, _ = pyautogui.size()
-        middle, side = 1250 / w, (1 - (1050 / w)) / 2
+        middle, side = 1750 / w, (1 - (1750 / w)) / 2
 
         # Application
-        _, app_container, _ = st.columns((side, middle, side))
+        _, app_container, _ = st.columns((0.2, 0.6, 0.2))
         for page, tab in zip(self._PAGES.values(), app_container.tabs(self._PAGES.keys())):
-            page(tab)
+            page(parent=tab)
 
         # Style
         st.markdown(

@@ -14,8 +14,6 @@ import numpy as np
 from controlnet_aux import MidasDetector
 
 # IMPORT: project
-import utils
-
 from src.image_utils.image_processing.image_processor import ImageProcessor
 
 
@@ -50,11 +48,11 @@ class MidasProcessor(ImageProcessor):
                 Midas mask
         """
         # Modify shape to work with midas
-        image = cv2.resize(image, (640, 480), interpolation=cv2.INTER_LANCZOS4)
+        mask = cv2.resize(image, (640, 480), interpolation=cv2.INTER_LANCZOS4)
 
         # Processes the image
-        depth_map = self._processor(input_image=image)
+        mask = self._processor(input_image=mask)
 
         # Resizes the depth_map
-        depth_map = np.stack((depth_map, depth_map, depth_map), axis=2)
-        return self._resize(image=depth_map, shape=image.shape)
+        mask = np.stack((mask, mask, mask), axis=2)
+        return self._resize(image=mask, shape=image.shape)

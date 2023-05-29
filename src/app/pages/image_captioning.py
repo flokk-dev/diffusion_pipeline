@@ -15,14 +15,14 @@ from src.image_utils.image import Images, ImageToDescribe
 from src.app.component import ImageUploader
 
 
-class ImageCaptioning(Page):
-    """ Represents an ImageCaptioning. """
+class ImageCaptioningPage(Page):
+    """ Represents an ImageCaptioningPage. """
     def __init__(
         self,
         parent
     ):
-        """ Initializes an ImageCaptioning. """
-        super(ImageCaptioning, self).__init__(id_="image_captioning", parent=parent)
+        """ Initializes an ImageCaptioningPage. """
+        super(ImageCaptioningPage, self).__init__(id_="image_captioning", parent=parent)
 
         # ----- Session state ----- #
         if "images" not in self.session_state:
@@ -32,6 +32,8 @@ class ImageCaptioning(Page):
             self.session_state["image_idx"] = 0
 
         # ----- Components ----- #
+        self.parent.info("This page allows you to generate a prompt that describes an image.")
+
         cols = self.parent.columns((0.5, 0.5))
 
         # Col n°1
@@ -126,7 +128,8 @@ class CaptionGenerator(Component):
             return
 
         # Generates a caption for the current image
-        caption = st.session_state.backend.image_captioning_manager("clip_interrogator")(
+        st.session_state.backend.check_clip_interrogator()
+        caption = st.session_state.backend.clip_interrogator(
             image=self.session_state["images"][self.session_state["image_idx"]].image
         )
 

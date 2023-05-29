@@ -8,10 +8,11 @@ Purpose:
 
 # IMPORT: utils
 from typing import *
-from PIL import Image
+import PIL
 
 # IMPORT: data processing
 import torch
+from torchvision import transforms
 
 # IMPORT: deep learning
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
@@ -93,7 +94,7 @@ class ControlNet(ImageGenerator):
         weights: List[int] = None,
         num_images: int = 1,
         seed: int = 0
-    ) -> Image.Image | List[Image.Image]:
+    ) -> PIL.Image.Image | List[PIL.Image.Image]:
         """
         Parameters
         ----------
@@ -114,23 +115,25 @@ class ControlNet(ImageGenerator):
 
         Returns
         ----------
-            Image.Image | List[Image.Image]
+            PIL.Image.Image | List[PIL.Image.Image]
                 generated images
         """
+        # If the images are not tensors
+        if isinstance(images[0], PIL.Image.Image):
+            images = [transforms.ToTensor()(image).unsqueeze(0) for image in images]
+
+        # If the weights have not been provided
         if weights is None:
             weights = [1.0] * len(images)
 
         # Generates images
-        images: List[Image.Image] = self._pipeline(
+        return self._pipeline(
             prompt=prompt,
             negative_prompt=negative_prompt,
+            width=512, height=512,
             image=images,
             latents=latents,
             num_images_per_prompt=num_images,
             controlnet_conditioning_scale=weights,
             generator=torch.Generator(device="cpu").manual_seed(seed)
         ).images
-
-        if num_images == 1:
-            return images[0]
-        return images

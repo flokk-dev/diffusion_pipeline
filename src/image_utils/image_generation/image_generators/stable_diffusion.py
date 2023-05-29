@@ -82,14 +82,10 @@ class StableDiffusion(ImageGenerator):
                 generated images
         """
         # Generates images
-        images: List[Image.Image] = self._pipeline(
+        return self._pipeline(
             prompt=prompt,
             negative_prompt=negative_prompt,
             latents=latents,
             num_images_per_prompt=num_images,
             generator=torch.Generator(device="cpu").manual_seed(seed)
         ).images
-
-        if num_images == 1:
-            return images[0]
-        return images

@@ -49,6 +49,6 @@ class OpenPoseProcessor(ImageProcessor):
         """
         # Processes the image
         return self._resize(
-            self._processor(input_image=image, return_pil=False),
+            self._processor(input_image=image, hand_and_face=True, return_pil=False),
             shape=image.shape
         )
