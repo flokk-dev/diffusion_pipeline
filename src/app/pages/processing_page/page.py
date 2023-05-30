@@ -10,19 +10,20 @@ Purpose:
 import streamlit as st
 
 # IMPORT: project
-from src.app.component import Page, Component
-from src.image_utils.image import Images, ImageToProcess
-from src.app.component import ImageUploader
+from src.frontend.pages.page import Page
+from src.frontend.pages.component import Component, ImageUploader
+
+from src.backend.image import Images, ImageToProcess
 
 
-class ImageProcessingPage(Page):
-    """ Represents an ImageProcessingPage. """
+class ProcessingPage(Page):
+    """ Represents an ProcessingPage. """
     def __init__(
         self,
         parent
     ):
-        """ Initializes an ImageProcessingPage. """
-        super(ImageProcessingPage, self).__init__(id_="image_processing", parent=parent)
+        """ Initializes an ProcessingPage. """
+        super(ProcessingPage, self).__init__(id_="image_processing", parent=parent)
 
         # ----- Session state ----- #
         if "images" not in self.session_state:

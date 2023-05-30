@@ -13,7 +13,7 @@ from controlnet_aux import CannyDetector
 
 
 # IMPORT: project
-from src.image_utils.image_processing.image_processor import ImageProcessor
+from src.backend.image_processing.image_processor import ImageProcessor
 
 
 class CannyProcessor(ImageProcessor):

@@ -17,7 +17,7 @@ import torch
 from diffusers import StableDiffusionPipeline
 
 # IMPORT: project
-from src.image_utils.image_generation.image_generator import ImageGenerator
+from src.backend.image_generation.image_generator import ImageGenerator
 
 
 class StableDiffusion(ImageGenerator):

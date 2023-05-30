@@ -14,7 +14,7 @@ import numpy as np
 from controlnet_aux import LineartDetector
 
 # IMPORT: project
-from src.image_utils.image_processing.image_processor import ImageProcessor
+from src.backend.image_processing.image_processor import ImageProcessor
 
 
 class LineartProcessor(ImageProcessor):

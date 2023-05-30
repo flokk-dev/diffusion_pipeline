@@ -1,8 +1,4 @@
-# Image processing page
-from .image_processing import ImageProcessingPage
-
-# Image captioning page
-from .image_captioning import ImageCaptioningPage
-
-# Image generation page
-from .image_generation import ImageGenerationPage
+# Pages
+from .processing_page import ProcessingPage
+from .captioning_page import CaptioningPage
+from .generation_page import GenerationPage

@@ -18,7 +18,7 @@ from torchvision import transforms
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 
 # IMPORT: project
-from src.image_utils.image_generation.image_generator import ImageGenerator
+from src.backend.image_generation.image_generator import ImageGenerator
 
 
 class ControlNet(ImageGenerator):

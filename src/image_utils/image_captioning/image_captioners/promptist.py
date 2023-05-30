@@ -14,7 +14,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from clip_interrogator import Config, Interrogator
 
 # IMPORT: project
-from src.image_utils.image_captioning.image_captioner import ImageCaptioner
+from src.backend.image_captioning.image_captioner import ImageCaptioner
 
 
 class Promptist(ImageCaptioner):

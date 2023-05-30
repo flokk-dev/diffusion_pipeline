@@ -18,16 +18,16 @@ import streamlit as st
 # IMPORT: project
 import paths
 
-from src.image_utils import Backend
-from src.app.pages import ImageProcessingPage, ImageCaptioningPage, ImageGenerationPage
+from src.backend import Backend
+from src.frontend.pages import ProcessingPage, CaptioningPage, GenerationPage
 
 
 class App:
     """ Represents an App. """
     _PAGES = {
-        "IMAGE PROCESSING": ImageProcessingPage,
-        "IMAGE CAPTIONING": ImageCaptioningPage,
-        "IMAGE GENERATION": ImageGenerationPage
+        "IMAGE PROCESSING": ProcessingPage,
+        "IMAGE CAPTIONING": CaptioningPage,
+        "IMAGE GENERATION": GenerationPage
     }
 
     def __init__(
@@ -57,7 +57,7 @@ class App:
         middle, side = 1750 / w, (1 - (1750 / w)) / 2
 
         # Application
-        _, app_container, _ = st.columns((0.2, 0.6, 0.2))
+        _, app_container, _ = st.columns((0.1, 0.8, 0.1))
         for page, tab in zip(self._PAGES.values(), app_container.tabs(self._PAGES.keys())):
             page(parent=tab)
 

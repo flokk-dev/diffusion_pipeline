@@ -10,7 +10,34 @@ Purpose:
 import streamlit as st
 
 # IMPORT: project
-from src.app.component import Page, Component
+from .page import Page
+
+
+class Component(st._DeltaGenerator):
+    """ Represents a Component. """
+    def __init__(
+        self,
+        page: Page,
+        parent: st._DeltaGenerator
+    ):
+        """
+        Initializes a Component.
+
+        Parameters
+        ----------
+            page: Page
+                page of the component
+            parent: st._DeltaGenerator
+                parent of the component
+        """
+        super(Component, self).__init__()
+
+        # ----- Attributes ----- #
+        self.page = page
+        self.session_state = st.session_state[self.page.id]
+
+        # Parent
+        self.parent = parent
 
 
 class ImageUploader(Component):
