@@ -6,6 +6,9 @@ Version: 1.0
 Purpose:
 """
 
+# IMPORT: utils
+import random
+
 # IMPORT: UI
 import streamlit as st
 
@@ -15,7 +18,7 @@ import numpy as np
 # IMPORT: project
 from src.app.component import Page, Component
 from src.app.component import ImageUploader
-from src.image_utils.image import Images, Mask, Image
+from src.image_utils.image import Images, Mask
 
 
 class ImageGenerationPage(Page):
@@ -33,14 +36,12 @@ class ImageGenerationPage(Page):
 
         # ----- Components ----- #
         # Options
-        tabs = self.parent.tabs(["ControlNet", "LoRA", "Prompt", "Hyper-parameters"])
+        tabs = self.parent.tabs(["ControlNet", "LoRA", "Prompt", "Hyper-parameters", "Generation"])
 
         ControlNetSelector(page=self, parent=tabs[0])
         Prompts(page=self, parent=tabs[2])
         HyperParameters(page=self, parent=tabs[3])
-
-        # Generation
-        ImageGeneration(page=self, parent=self.parent)
+        ImageGeneration(page=self, parent=tabs[4])
 
 
 # ---------- CONTROLNET ---------- #
@@ -107,6 +108,7 @@ class MaskDisplayer(Component):
                 # Displays the mask
                 col.image(
                     image=self.session_state["images"][idx].image,
+                    caption=self.session_state["images"][idx].name,
                     use_column_width=True
                 )
 
@@ -187,13 +189,8 @@ class MaskRanker(Component):
 
         # Applies the ranking on the in memory images
         new_images = [self.session_state["images"][idx] for idx in valid_idx + invalid_idx]
-        for idx, image in enumerate(self.session_state["images"]):
-            image = 
-        self.session_state["images"] = [
-            self.session_state["images"][idx]
-            for idx
-            in valid_idx + invalid_idx
-        ]
+        for idx in range(len(new_images)):
+            self.session_state["images"][idx] = new_images[idx]
 
 
 # ---------- PROMPTS ---------- #
@@ -365,9 +362,53 @@ class HyperParameters(Component):
                 parent of the component
         """
         super(HyperParameters, self).__init__(page=page, parent=parent)
+        self.parent.info(
+            "Here, you can adjust the hyper-parameters of StableDiffusion in order to "
+            "modify the generation."
+        )
 
         # ----- Components ----- #
-        self.parent.info("bla bla")
+        cols = self.parent.columns([0.5, 0.5])
+        # Width
+        with cols[0].expander(label="", expanded=True):
+            st.info("Width of the image to generate")
+
+            st.slider(
+                label="width", label_visibility="collapsed",
+                min_value=0, max_value=1024, value=512,
+                key=f"{self.page.id}_width"
+            )
+
+        # Height
+        with cols[1].expander(label="", expanded=True):
+            st.info("Height of the image to generate")
+
+            st.slider(
+                label="height", label_visibility="collapsed",
+                min_value=0, max_value=1024, value=512,
+                key=f"{self.page.id}_height"
+            )
+
+        cols = self.parent.columns([0.5, 0.5])
+        # Guidance scale
+        with cols[0].expander(label="", expanded=True):
+            st.info("Guidance scale, this value represent...")
+
+            st.slider(
+                label="guidance_scale", label_visibility="collapsed",
+                min_value=0.0, max_value=21.0, value=7.5, step=0.1,
+                key=f"{self.page.id}_guidance_scale"
+            )
+
+        # Sampling steps
+        with cols[1].expander(label="", expanded=True):
+            st.info("Number of denoising steps")
+
+            st.slider(
+                label="num_steps", label_visibility="collapsed",
+                min_value=0, max_value=100, value=20,
+                key=f"{self.page.id}_num_steps"
+            )
 
 
 # ---------- IMAGE GENERATION ---------- #
@@ -468,15 +509,23 @@ class ImageGenerator(Component):
         if self.session_state["prompt"] == "":
             return
 
+        # Retrieves the parameters needed to generate an image
+        args = {
+            "prompt": self.session_state["prompt"],
+            "negative_prompt": self.session_state["negative_prompt"],
+            "width": st.session_state[f"{self.page.id}_width"],
+            "height": st.session_state[f"{self.page.id}_height"],
+            "num_steps": st.session_state[f"{self.page.id}_num_steps"],
+            "guidance_scale": st.session_state[f"{self.page.id}_guidance_scale"],
+            "num_images": 1,
+            "seed": 1 #  random.randint(0, 1000)
+        }
+
         # If no mask has been uploaded
         if len(self.session_state["images"]) == 0:
             # Generates images using basic StableDiffusion
             st.session_state.backend.check_stable_diffusion()
-            generated_images = st.session_state.backend.stable_diffusion(
-                prompt=self.session_state["prompt"],
-                negative_prompt=self.session_state["negative_prompt"],
-                seed=1
-            )
+            generated_images = st.session_state.backend.stable_diffusion(**args)
 
         else:
             # Retrieves the uploaded masks and their corresponding processing
@@ -486,17 +535,13 @@ class ImageGenerator(Component):
                 if self.session_state["images"][idx].processing == "":
                     return
 
-                input_masks.append(self.session_state["images"][idx])
+                input_masks.append(self.session_state["images"][idx].image)
                 processing_ids.append(self.session_state["images"][idx].processing)
 
             # Generates images using ControlNet
+            st.session_state.backend.reset_control_net()
             st.session_state.backend.check_control_net(processing_ids=processing_ids)
-            generated_images = st.session_state.backend.control_net(
-                prompt="a white dog in front of a house, best quality",
-                negative_prompt="blur, monochrome, lowres, bad anatomy, worst quality, low quality",
-                images=input_masks,
-                seed=1
-            )
+            generated_images = st.session_state.backend.control_net(images=input_masks, **args)
 
         # Updates the in memory generated images
         for idx, image in enumerate(generated_images):

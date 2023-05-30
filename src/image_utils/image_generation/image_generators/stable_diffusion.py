@@ -58,6 +58,10 @@ class StableDiffusion(ImageGenerator):
         self,
         prompt: str,
         negative_prompt: str,
+        width: int = 512,
+        height: int = 512,
+        num_steps: int = 50,
+        guidance_scale: float = 7.5,
         latents: torch.Tensor = None,
         num_images: int = 1,
         seed: int = None
@@ -69,6 +73,14 @@ class StableDiffusion(ImageGenerator):
                 prompt from which to generate images
             negative_prompt: str
                 prompt to avoid during the generation
+            width: int
+                ...
+            height: int
+                ...
+            num_steps: int
+                ...
+            guidance_scale: int
+                ...
             latents: torch.Tensor
                 random noise from which to generate images
             num_images: int
@@ -85,6 +97,10 @@ class StableDiffusion(ImageGenerator):
         return self._pipeline(
             prompt=prompt,
             negative_prompt=negative_prompt,
+            width=width,
+            height=height,
+            num_inference_steps=num_steps,
+            guidance_scale=guidance_scale,
             latents=latents,
             num_images_per_prompt=num_images,
             generator=torch.Generator(device="cpu").manual_seed(seed)

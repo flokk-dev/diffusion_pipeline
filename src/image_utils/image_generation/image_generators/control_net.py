@@ -90,6 +90,10 @@ class ControlNet(ImageGenerator):
         prompt: str,
         images: List[torch.FloatTensor],
         negative_prompt: str = "",
+        width: int = 512,
+        height: int = 512,
+        num_steps: int = 50,
+        guidance_scale: float = 7.5,
         latents: torch.Tensor = None,
         weights: List[int] = None,
         num_images: int = 1,
@@ -104,6 +108,14 @@ class ControlNet(ImageGenerator):
                 prompt to avoid during the generation
             images: List[torch.Tensor]
                 images from which to generate images
+            width: int
+                ...
+            height: int
+                ...
+            num_steps: int
+                ...
+            guidance_scale: int
+                ...
             latents: torch.Tensor
                 random noise from which to generate images
             weights: List[int]
@@ -119,8 +131,11 @@ class ControlNet(ImageGenerator):
                 generated images
         """
         # If the images are not tensors
-        if isinstance(images[0], PIL.Image.Image):
-            images = [transforms.ToTensor()(image).unsqueeze(0) for image in images]
+        if not isinstance(images[0], torch.FloatTensor):
+            processing = transforms.Compose([
+                transforms.ToTensor(), transforms.Resize((height, width))
+            ])
+            images = [processing(image).unsqueeze(0) for image in images]
 
         # If the weights have not been provided
         if weights is None:
@@ -130,8 +145,11 @@ class ControlNet(ImageGenerator):
         return self._pipeline(
             prompt=prompt,
             negative_prompt=negative_prompt,
-            width=512, height=512,
             image=images,
+            width=width,
+            height=height,
+            num_inference_steps=num_steps,
+            guidance_scale=guidance_scale,
             latents=latents,
             num_images_per_prompt=num_images,
             controlnet_conditioning_scale=weights,
