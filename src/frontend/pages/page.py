@@ -6,34 +6,31 @@ Version: 1.0
 Purpose:
 """
 
-# IMPORT: UI
+# IMPORT: utils
 import streamlit as st
 
 
 class Page:
-    """ Represents a Page. """
-    def __init__(
-        self,
-        id_: str,
-        parent: st._DeltaGenerator
-    ):
+    """ Represents a page of the application. """
+    def __init__(self, parent: st._DeltaGenerator, page_id: str):
         """
-        Initializes a Page.
+        Initializes a page of the application.
 
         Parameters
         ----------
-            id_: str
-                id of the page
             parent: st._DeltaGenerator
                 parent of the page
+            page_id: str
+                unique id of the page
         """
         # ----- Attributes ----- #
-        self.id = id_
+        self.ID: str = page_id
 
-        # Parent
-        self.parent = parent
+        # Parent of the page (container)
+        self.parent: st._DeltaGenerator = parent
 
         # ----- Session state ----- #
-        if self.id not in st.session_state:
-            st.session_state[self.id] = dict()
-        self.session_state = st.session_state[self.id]
+        # Stores the session_state of the page directly in it
+        if self.ID not in st.session_state:
+            st.session_state[self.ID] = dict()
+        self.session_state: dict = st.session_state[self.ID]

@@ -24,13 +24,14 @@ class Mask(Image):
 
         # ----- Attributes ----- #
         self.processing: str = ""
+        self.weight: float = 1.0
 
     def reset(self):
         """ Resets the image. """
         super().reset()
 
-        # process id
         self.processing = ""
+        self.weight: float = 1.0
 
 
 class ImageToDescribe(Image):
@@ -40,14 +41,13 @@ class ImageToDescribe(Image):
         super(ImageToDescribe, self).__init__()
 
         # ----- Attributes ----- #
-        self.caption: str = ""
+        self.prompt: str = ""
 
     def reset(self):
         """ Resets the image. """
         super().reset()
 
-        # process id
-        self.caption = ""
+        self.prompt = ""
 
 
 class ImageToProcess(Image):
@@ -71,13 +71,11 @@ class ImageToProcess(Image):
         """
         super().load(image)
 
-        # Mask
         self.mask = np.zeros_like(self.image)
 
     def reset(self):
         """ Resets the image. """
         super().reset()
 
-        # process id
         self.processing = ""
         self.mask = np.zeros_like(self.image)

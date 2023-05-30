@@ -11,7 +11,7 @@ import streamlit as st
 
 # IMPORT: project
 from src.frontend.pages.page import Page
-from src.frontend.pages.component import Component, ImageUploader
+from src.frontend.components.component import Component, ImageUploader
 
 from src.backend.image import Images, Mask
 
@@ -88,22 +88,33 @@ class MaskDisplayer(Component):
                     use_column_width=True
                 )
 
-                # Creates the selectbox allowing to indicate the processing that gives the mask
+                # Creates a selectbox allowing to indicate the processing that gives the mask
                 col.selectbox(
                     label="selectbox", label_visibility="collapsed",
-                    key=f"{self.page.id}_selectbox_{idx}",
+                    key=f"{self.page.ID}_processing_{idx}",
                     options=options,
-                    on_change=self.on_change, args=(idx,),
-                    index=options.index(self.session_state["images"][idx].processing)
+                    index=options.index(self.session_state["images"][idx].processing),
+                    on_change=self.on_change_controlnet, args=(idx, )
                 )
 
-    def on_change(self, idx):
-        # Updates the processing of the image at index idx
-        self.session_state["images"][idx].processing = \
-            st.session_state[f"{self.page.id}_selectbox_{idx}"]
+                # Creates a text_input allowing to indicate the weight of the mask
+                col.text_input(
+                    label="weight", label_visibility="collapsed",
+                    key=f"{self.page.ID}_weight_{idx}",
+                    placeholder="Here, you can specify the weight",
+                    value=self.session_state["images"][idx].weight,
+                    on_change=self.on_change_weight, args=(idx, )
+                )
 
-        # Resets the ControlNet
-        st.session_state.backend.reset_control_net()
+    def on_change_controlnet(self, idx):
+        # Updates the processing of the mask at index idx
+        self.session_state["images"][idx].processing = \
+            st.session_state[f"{self.page.ID}_processing_{idx}"]
+
+    def on_change_weight(self, idx):
+        # Updates the weight of the mask at index idx
+        self.session_state["images"][idx].weight = \
+            float(st.session_state[f"{self.page.ID}_weight_{idx}"])
 
 
 class MaskRanker(Component):
@@ -127,11 +138,11 @@ class MaskRanker(Component):
         super(MaskRanker, self).__init__(page=page, parent=parent)
 
         # ----- Components ----- #
-        with self.parent.form(key=f"{self.page.id}_form_0"):
+        with self.parent.form(key=f"{self.page.ID}_form_0"):
             # Creates the text_input allowing to specify the ranking of the images
             st.text_input(
                 label="text_input", label_visibility="collapsed",
-                key=f"{self.page.id}_text_input",
+                key=f"{self.page.ID}_text_input",
                 placeholder="Here, you can rank the masks by importance (separated by a dash)"
             )
 
@@ -148,23 +159,15 @@ class MaskRanker(Component):
             return
 
         # If no rank has been entered
-        if len(st.session_state[f"{self.page.id}_text_input"]) == 0:
+        if len(st.session_state[f"{self.page.ID}_text_input"]) == 0:
             return
 
-        # If the number of ranked element is less than the number of masks
-        ranking = [int(idx) for idx in st.session_state[f"{self.page.id}_text_input"].split("-")]
-        if len(ranking) < len(self.session_state["images"]):
+        # If the provided ranking isn't conform
+        ranking = [int(idx)-1 for idx in st.session_state[f"{self.page.ID}_text_input"].split("-")]
+        if sum(ranking) != sum(range(len(self.session_state["images"]))):
             return
-
-        # Separates the valid and invalid indexes
-        valid_idx, invalid_idx = list(), list()
-        for idx in ranking:
-            if idx <= len(self.session_state["images"]) - 1:
-                valid_idx.append(idx)
-            else:
-                invalid_idx.append(idx)
 
         # Applies the ranking on the in memory images
-        new_images = [self.session_state["images"][idx] for idx in valid_idx + invalid_idx]
+        new_images = [self.session_state["images"][idx] for idx in ranking]
         for idx in range(len(new_images)):
             self.session_state["images"][idx] = new_images[idx]

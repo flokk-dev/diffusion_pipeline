@@ -90,7 +90,7 @@ class ControlNet:
         num_steps: int = 50,
         guidance_scale: float = 7.5,
         latents: torch.Tensor = None,
-        weights: List[int] = None,
+        weights: List[float] = None,
         num_images: int = 1,
         seed: int = 0
     ) -> PIL.Image.Image | List[PIL.Image.Image]:
@@ -113,7 +113,7 @@ class ControlNet:
                 ...
             latents: torch.Tensor
                 random noise from which to generate images
-            weights: List[int]
+            weights: List[float]
                 weights of the control-nets
             num_images: int
                 number of images to generate

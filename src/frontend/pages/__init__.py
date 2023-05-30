@@ -1,4 +1,4 @@
 # Pages
-from .processing_page import ProcessingPage
-from .captioning_page import CaptioningPage
-from .generation_page import GenerationPage
+from .image_processing import ImageProcessingPage
+from .image_captioning import ImageCaptioningPage
+from .image_generation import GenerationPage
