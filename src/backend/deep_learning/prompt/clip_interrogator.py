@@ -7,7 +7,7 @@ Purpose:
 """
 
 # IMPORT: utils
-import PIL
+from PIL import Image
 
 # IMPORT: deep learning
 from clip_interrogator import Config, Interrogator
@@ -15,16 +15,16 @@ from clip_interrogator import Config, Interrogator
 
 class ClipInterrogator:
     """
-    Represents a ClipInterrogator.
-
+    Represents an object allowing to transform images into prompts.
     Attributes
     ----------
         _model: Interrogator
-            model needed to generate captions
+            model allowing to transform images into prompts
     """
     def __init__(self):
-        """ Initializes a ClipInterrogator. """
+        """ Initializes an object allowing to transform images into prompts. """
         # ----- Attributes ----- #
+        # ClipInterrogator configuration
         model_config: Config = Config()
 
         model_config.blip_offload = True
@@ -32,40 +32,32 @@ class ClipInterrogator:
         model_config.flavor_intermediate_count = 512
         model_config.blip_num_beams = 64
 
-        # Model
+        # Model allowing to transform images into prompts
         self._model: Interrogator = Interrogator(model_config)
-        self._model.device = "cpu"
 
-    def __call__(
-        self,
-        image: PIL.Image,
-        mode: str = None,
-        max_flavor: int = 10
-    ) -> str:
+    def __call__(self, image: Image.Image, mode: str = None, max_flavor: int = 10) -> str:
         """
         Parameters
         ----------
             image: PIL.Image
-                image to generate caption from
+                image to transform into a prompt
             mode: str
-                mode of the captioning
+                interrogation mode
             max_flavor: int
                 ...
 
         Returns
         ----------
             str
-                caption that describes the image
+                prompt version of the image
         """
-        image = PIL.Image.fromarray(image)
+        # If the image is not a PIL image
+        image = Image.fromarray(image)
 
-        self._model.device = "cuda"
+        # Transforms the image into a prompt depending on the interrogation mode
         if mode == "best":
-            image = self._model.interrogate(image, max_flavors=max_flavor)
+            return self._model.interrogate(image, max_flavors=max_flavor)
         elif mode == "fast":
-            image = self._model.interrogate_fast(image)
+            return self._model.interrogate_fast(image)
         else:
-            image = self._model.interrogate_classic(image)
-
-        self._model.device = "cpu"
-        return image
+            return self._model.interrogate_classic(image)

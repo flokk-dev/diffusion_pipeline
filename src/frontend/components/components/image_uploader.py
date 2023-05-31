@@ -12,14 +12,14 @@ import streamlit as st
 
 # IMPORT: project
 from src.frontend.components.component import Component
-from src.frontend.pages.page import Page
+from src.frontend.pages import Page
 
 
 class ImageUploader(Component):
-    """ Represents an image uploader. """
+    """ Represents the component allowing to upload images. """
     def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes an image uploader.
+        Initializes the component allowing to upload images.
 
         Parameters
         ----------

@@ -7,7 +7,7 @@ Purpose:
 """
 
 
-# IMPORT: data processing
+# IMPORT: utils
 import numpy as np
 
 # IMPORT: deep learning
@@ -18,23 +18,22 @@ from src.backend.image_processing.image_processing import ImageProcessing
 
 
 class MediapipeFace(ImageProcessing):
-    """ Represents an MediapipeFace. """
-    control_net_id: str = "lllyasviel/sd-controlnet-openpose"
+    """ Represents a MediapipeFace processing. """
 
     def __init__(
             self
     ):
-        """ Initializes an MediapipeFace. """
+        """ Initializes a MediapipeFace processing. """
         super(MediapipeFace, self).__init__()
 
         # ----- Attributes ----- #
-        self._processor = MediapipeFaceDetector()
+        # Object allowing to process images
+        self._processor: MediapipeFaceDetector = MediapipeFaceDetector()
 
-    def __call__(
-        self,
-        image: np.ndarray
-    ) -> np.ndarray:
+    def __call__(self, image: np.ndarray) -> np.ndarray:
         """
+        Runs the processing into the image.
+
         Parameters
         ----------
             image: np.ndarray
@@ -43,10 +42,10 @@ class MediapipeFace(ImageProcessing):
         Returns
         ----------
             np.ndarray
-                PidiNet mask
+                processed image
         """
-        # Processes the image
-        return self._resize(
-            self._processor(image=image, return_pil=False),
-            shape=image.shape
-        )
+        # Runs the processing into the image
+        output_image: np.ndarray = self._processor(image=image, return_pil=False)
+
+        # Resizes the output image to its original shape
+        return self._resize(image=output_image, shape=image.shape)

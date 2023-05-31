@@ -6,26 +6,22 @@ Version: 1.0
 Purpose:
 """
 
-# IMPORT: UI
+# IMPORT: utils
 import streamlit as st
 
 # IMPORT: project
-from src.frontend.pages.page import Page
-from src.frontend.components.component import Component, ImageUploader
+from src.frontend.pages import Page
+from src.frontend.components import Component, ImageUploader
 
 from src.backend.image import Images, Mask
 
 
 class ControlNetSelector(Component):
-    """ Represents a ControlNetSelector. """
+    """ Represents the sub-page allowing to upload the ControlNet masks. """
 
-    def __init__(
-            self,
-            page: Page,
-            parent: st._DeltaGenerator
-    ):
+    def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes a ControlNetSelector.
+        Initializes the sub-page allowing to upload the ControlNet masks.
 
         Parameters
         ----------
@@ -34,36 +30,31 @@ class ControlNetSelector(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(ControlNetSelector, self).__init__(page=page, parent=parent)
-        self.parent.info(
-            "Here, you can load some masks that will then guide the generation using ControlNet."
-        )
+        super(ControlNetSelector, self).__init__(page, parent, component_id="controlnet_selector")
+        self.parent.info("Here, you can upload some masks that will then guide the generation using ControlNet.")
 
         # ----- Session state ----- #
+        # Creates the list of ControlNet masks
         if "images" not in self.session_state:
             self.session_state["images"] = Images(image_type=Mask)
 
         # ----- Components ----- #
         # Row n°1
-        MaskDisplayer(page=self.page, parent=self.parent)
+        MaskDisplayer(page=self.page, parent=self.parent)  # displays the uploaded ControlNet masks
 
         # Row n°2
         cols = self.parent.columns((0.5, 0.5))
 
-        ImageUploader(page=self.page, parent=cols[0])
-        MaskRanker(page=self.page, parent=cols[1])
+        ImageUploader(page=self.page, parent=cols[0])  # allowing to upload images
+        MaskRanker(page=self.page, parent=cols[1])  # allowing to rank ControlNet masks
 
 
 class MaskDisplayer(Component):
-    """ Represents a MaskDisplayer. """
+    """ Represents the component that displays the ControlNet masks. """
 
-    def __init__(
-            self,
-            page: Page,
-            parent: st._DeltaGenerator
-    ):
+    def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes a MaskDisplayer.
+        Initializes the component that displays the ControlNet masks.
 
         Parameters
         ----------
@@ -72,53 +63,52 @@ class MaskDisplayer(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(MaskDisplayer, self).__init__(page=page, parent=parent)
+        super(MaskDisplayer, self).__init__(page, parent, component_id="mask_displayer")
 
         # ----- Components ----- #
         # Retrieves the processing options
-        options = [""] + list(st.session_state.backend.control_net.CONTROL_NETS_IDS.keys())
+        options = [""] + list(st.session_state.backend.controlnet.CONTROLNET_IDS.keys())
 
         with self.parent.expander(label="", expanded=True):
             # For each in memory image creates a column
             for idx, col in enumerate(st.columns([1 for _ in self.session_state["images"]])):
-                # Displays the mask
-                col.image(
-                    image=self.session_state["images"][idx].image,
-                    caption=self.session_state["images"][idx].name,
-                    use_column_width=True
-                )
+                # Retrieves the current image
+                image = self.session_state["images"][idx]
 
-                # Creates a selectbox allowing to indicate the processing that gives the mask
+                # Displays the mask
+                col.image(image=image.image, caption=image.name, use_column_width=True)
+
+                # Creates a select box allowing to indicate the processing that gives the mask
                 col.selectbox(
-                    label="selectbox", label_visibility="collapsed",
-                    key=f"{self.page.ID}_processing_{idx}",
+                    key=f"{self.page.ID}_{self.ID}_select_box_{idx}",
+                    label="select box", label_visibility="collapsed",
                     options=options,
-                    index=options.index(self.session_state["images"][idx].processing),
+                    index=options.index(image.processing),
                     on_change=self.on_change_controlnet, args=(idx, )
                 )
 
                 # Creates a text_input allowing to indicate the weight of the mask
                 col.text_input(
+                    key=f"{self.page.ID}_{self.ID}_text_input{idx}",
                     label="weight", label_visibility="collapsed",
-                    key=f"{self.page.ID}_weight_{idx}",
+                    value=image.weight,
                     placeholder="Here, you can specify the weight",
-                    value=self.session_state["images"][idx].weight,
                     on_change=self.on_change_weight, args=(idx, )
                 )
 
     def on_change_controlnet(self, idx):
         # Updates the processing of the mask at index idx
         self.session_state["images"][idx].processing = \
-            st.session_state[f"{self.page.ID}_processing_{idx}"]
+            st.session_state[f"{self.page.ID}_{self.ID}_select_box_{idx}"]
 
     def on_change_weight(self, idx):
         # Updates the weight of the mask at index idx
         self.session_state["images"][idx].weight = \
-            float(st.session_state[f"{self.page.ID}_weight_{idx}"])
+            float(st.session_state[f"{self.page.ID}_{self.ID}_text_input{idx}"])
 
 
 class MaskRanker(Component):
-    """ Represents a MaskRanker. """
+    """ Represents the component allowing to rank the ControlNet masks. """
 
     def __init__(
             self,
@@ -126,7 +116,7 @@ class MaskRanker(Component):
             parent: st._DeltaGenerator
     ):
         """
-        Initializes a MaskRanker.
+        Initializes the component allowing to rank the ControlNet masks.
 
         Parameters
         ----------
@@ -135,14 +125,14 @@ class MaskRanker(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(MaskRanker, self).__init__(page=page, parent=parent)
+        super(MaskRanker, self).__init__(page, parent, component_id="mask_ranker")
 
         # ----- Components ----- #
-        with self.parent.form(key=f"{self.page.ID}_form_0"):
+        with self.parent.form(key=f"{self.page.ID}_{self.ID}_form"):
             # Creates the text_input allowing to specify the ranking of the images
             st.text_input(
+                key=f"{self.page.ID}_{self.ID}_text_input",
                 label="text_input", label_visibility="collapsed",
-                key=f"{self.page.ID}_text_input",
                 placeholder="Here, you can rank the masks by importance (separated by a dash)"
             )
 
@@ -159,11 +149,12 @@ class MaskRanker(Component):
             return
 
         # If no rank has been entered
-        if len(st.session_state[f"{self.page.ID}_text_input"]) == 0:
+        ranking = st.session_state[f"{self.page.ID}_{self.ID}_text_input"]
+        if len(st.session_state[f"{self.page.ID}_{self.ID}_text_input"]) == 0:
             return
 
         # If the provided ranking isn't conform
-        ranking = [int(idx)-1 for idx in st.session_state[f"{self.page.ID}_text_input"].split("-")]
+        ranking = [int(idx)-1 for idx in ranking]
         if sum(ranking) != sum(range(len(self.session_state["images"]))):
             return
 

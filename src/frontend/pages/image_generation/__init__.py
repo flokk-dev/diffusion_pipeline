@@ -1,1 +1,1 @@
-from .page import GenerationPage
+from .page import ImageGenerationPage

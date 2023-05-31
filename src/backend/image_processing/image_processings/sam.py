@@ -18,25 +18,22 @@ from src.backend.image_processing.image_processing import ImageProcessing
 
 
 class Sam(ImageProcessing):
-    """ Represents an Sam. """
-    control_net_id: str = "lllyasviel/sd-controlnet-seg"
+    """ Represents a Sam processing. """
 
-    def __init__(
-            self
-    ):
-        """ Initializes an Sam. """
+    def __init__(self):
+        """ Initializes  a Sam processing. """
         super(Sam, self).__init__()
 
         # ----- Attributes ----- #
-        self._processor = SamDetector.from_pretrained(
+        # Object allowing to process images
+        self._processor: SamDetector = SamDetector.from_pretrained(
             pretrained_model_or_path="segments-arnaud/sam_vit_h"
         )
 
-    def __call__(
-        self,
-        image: np.ndarray
-    ) -> np.ndarray:
+    def __call__(self, image: np.ndarray) -> np.ndarray:
         """
+        Runs the processing into the image.
+
         Parameters
         ----------
             image: np.ndarray
@@ -45,10 +42,10 @@ class Sam(ImageProcessing):
         Returns
         ----------
             np.ndarray
-                PidiNet mask
+                processed image
         """
-        # Processes the image
-        return self._resize(
-            np.array(self._processor(image=image)),
-            shape=image.shape
-        )
+        # Runs the processing into the image
+        output_image: np.ndarray = np.array(self._processor(image=image))
+
+        # Resizes the output image to its original shape
+        return self._resize(image=output_image, shape=image.shape)

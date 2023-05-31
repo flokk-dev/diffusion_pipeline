@@ -8,38 +8,34 @@ Purpose:
 
 # IMPORT: utils
 from typing import *
+import numpy as np
 
 # IMPORT: data processing
 import cv2
-import numpy as np
 
 
 class ImageProcessing:
-    """ Represents a ImageProcessing. """
-    control_net_id: str = None
+    """ Represents an image processing. """
 
     def __init__(
             self
     ):
-        """ Initializes a ImageProcessing. """
+        """ Initializes an image processing. """
         # ----- Attributes ----- #
-        # Object needed to process images
+        # Object allowing to process images
         self._processor: Any = None
 
     @staticmethod
-    def _resize(
-        image: np.ndarray,
-        shape: Tuple[int]
-    ) -> np.ndarray:
+    def _resize(image: np.ndarray, shape: Tuple[int]) -> np.ndarray:
         """
-        Resizes an image to a given shape.
+        Resizes an image.
 
         Parameters
         ----------
             image: np.ndarray
                 image to resize
             shape: Tuple[int]
-                desired shape
+                output shape
 
         Returns
         ----------
@@ -48,11 +44,10 @@ class ImageProcessing:
         """
         return cv2.resize(image, (shape[1], shape[0]), interpolation=cv2.INTER_LANCZOS4)
 
-    def __call__(
-        self,
-        image: np.ndarray
-    ) -> np.ndarray:
+    def __call__(self, image: np.ndarray) -> np.ndarray:
         """
+        Runs the image processing into the image.
+
         Parameters
         ----------
             image: np.ndarray
@@ -61,7 +56,7 @@ class ImageProcessing:
         Returns
         ----------
             np.ndarray
-                output mask
+                processed image
 
         Raises
         ----------

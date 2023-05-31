@@ -19,7 +19,7 @@ from diffusers import StableDiffusionPipeline
 
 class StableDiffusion:
     """
-    Represents a StableDiffusion.
+    Represents an object allowing to generate images using only StableDiffusion.
 
     Attributes
     ----------
@@ -27,26 +27,23 @@ class StableDiffusion:
             diffusion pipeline needed to generate images
     """
 
-    def __init__(
-        self,
-        pipeline_path: str = "runwayml/stable-diffusion-v1-5"
-    ):
+    def __init__(self, path: str = "runwayml/stable-diffusion-v1-5"):
         """
-        Initializes a StableDiffusionPipeline.
+        Initializes an object allowing to generate images using only StableDiffusion.
 
         Parameters
         ----------
-            pipeline_path: str
+            path: str
                 path to the pretrained pipeline
         """
         # ----- Attributes ----- #
-        # Pipeline
+        # Pipeline allowing to generate images
         self._pipeline: StableDiffusionPipeline = StableDiffusionPipeline.from_pretrained(
-            pretrained_model_name_or_path=pipeline_path,
+            pretrained_model_name_or_path=path,
             torch_dtype=torch.float16
         )
 
-        # Options
+        # Optimizes the use of the GPU's VRAM
         self._pipeline.enable_model_cpu_offload()
 
     def __call__(
@@ -65,27 +62,27 @@ class StableDiffusion:
         Parameters
         ----------
             prompt: str
-                prompt from which to generate images
+                prompt describing the output image
             negative_prompt: str
-                prompt to avoid during the generation
+                prompt describing what to avoid in the output image
             width: int
-                ...
+                width of the output image
             height: int
-                ...
+                height of the output image
             num_steps: int
-                ...
+                number of denoising steps
             guidance_scale: int
-                ...
+                strength of the prompt during the generation
             latents: torch.Tensor
-                random noise from which to generate images
+                random noise from which to start the generation procedure
             num_images: int
                 number of images to generate
             seed: int
-                random seed used for the generation
+                random seed to use during the generation procedure
 
         Returns
         ----------
-            Image.Image | List[Image.Image]
+            List[Image.Image]
                 generated images
         """
         # Generates images

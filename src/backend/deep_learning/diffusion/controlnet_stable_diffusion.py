@@ -8,26 +8,26 @@ Purpose:
 
 # IMPORT: utils
 from typing import *
-import PIL
+from PIL import Image
 
 # IMPORT: data processing
 import torch
-from torchvision import transforms
+from torchvision.transforms import Compose, ToTensor, Resize
 
 # IMPORT: deep learning
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 
 
-class ControlNet:
+class ControlNetStableDiffusion:
     """
-    Represents a ControlNet.
+    Represents an object allowing to generate images using ControlNet + StableDiffusion.
 
     Attributes
     ----------
         _pipeline: StableDiffusionControlNetPipeline
             diffusion pipeline needed to generate images
     """
-    CONTROL_NETS_IDS = {
+    CONTROLNET_IDS = {
         "canny": "lllyasviel/sd-controlnet-canny",
         "depth": "lllyasviel/sd-controlnet-depth",
         "hed": "lllyasviel/sd-controlnet-hed",
@@ -38,46 +38,45 @@ class ControlNet:
         "seg": "lllyasviel/sd-controlnet-seg",
     }
 
-    def __init__(
-        self,
-        processing_ids: List[str],
-        pipeline_path: str = "runwayml/stable-diffusion-v1-5"
-    ):
+    def __init__(self, controlnet_ids: List[str], path: str = "runwayml/stable-diffusion-v1-5"):
         """
-        Initializes a ControlNet.
+        Initializes an object allowing to generate images using ControlNet + StableDiffusion.
 
         Parameters
         ----------
-            processing_ids: List[str]
-                ...
-            pipeline_path: str
+            controlnet_ids: List[str]
+                list of the ControlNet to use
+            path: str
                 path to the pretrained pipeline
         """
         # ----- Attributes ----- #
-        # ControlNets
+        # List of the ControlNet ids composing the pipeline
+        self.controlnet_ids = controlnet_ids
+
+        # List of the ControlNet composing the pipeline
         control_nets = [
             ControlNetModel.from_pretrained(
-                pretrained_model_name_or_path=self.CONTROL_NETS_IDS[processing_id],
+                pretrained_model_name_or_path=self.CONTROLNET_IDS[controlnet_id],
                 torch_dtype=torch.float16
             )
-            for processing_id
-            in processing_ids
+            for controlnet_id
+            in controlnet_ids
         ]
 
-        # Pipeline
+        # Pipeline allowing to generate images
         self._pipeline: StableDiffusionControlNetPipeline = StableDiffusionControlNetPipeline.from_pretrained(
-            pretrained_model_name_or_path=pipeline_path,
+            pretrained_model_name_or_path=path,
             controlnet=control_nets,
             torch_dtype=torch.float16,
             safety_checker=None
         )
 
-        # Scheduler
+        # Pipeline's noise scheduler allowing to modulate the noising thing
         self._pipeline.scheduler = UniPCMultistepScheduler.from_config(
             self._pipeline.scheduler.config
         )
 
-        # Options
+        # Optimizes the use of the GPU's VRAM
         self._pipeline.enable_model_cpu_offload()
 
     def __call__(
@@ -93,44 +92,44 @@ class ControlNet:
         weights: List[float] = None,
         num_images: int = 1,
         seed: int = 0
-    ) -> PIL.Image.Image | List[PIL.Image.Image]:
+    ) -> List[Image.Image]:
         """
+        Generates images.
+
         Parameters
         ----------
             prompt: str
-                prompt from which to generate images
+                prompt describing the output image
             negative_prompt: str
-                prompt to avoid during the generation
+                prompt describing what to avoid in the output image
             images: List[torch.Tensor]
-                images from which to generate images
+                ControlNet masks to guide the generation.
             width: int
-                ...
+                width of the output image
             height: int
-                ...
+                height of the output image
             num_steps: int
-                ...
+                number of denoising steps
             guidance_scale: int
-                ...
+                strength of the prompt during the generation
             latents: torch.Tensor
-                random noise from which to generate images
+                random noise from which to start the generation procedure
             weights: List[float]
-                weights of the control-nets
+                weight of each ControlNet
             num_images: int
                 number of images to generate
             seed: int
-                random seed used for the generation
+                random seed to use during the generation procedure
 
         Returns
         ----------
-            PIL.Image.Image | List[PIL.Image.Image]
+            List[Image.Image]
                 generated images
         """
         # If the images are not tensors
         if not isinstance(images[0], torch.FloatTensor):
-            processing = transforms.Compose([
-                transforms.ToTensor(), transforms.Resize((height, width))
-            ])
-            images = [processing(image).unsqueeze(0) for image in images]
+            processing: Compose = Compose([ToTensor(), Resize((height, width))])
+            images: List[torch.Tensor] = [processing(image).unsqueeze(0) for image in images]
 
         # If the weights have not been provided
         if weights is None:

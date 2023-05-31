@@ -12,61 +12,67 @@ from typing import *
 # IMPORT: project
 from .image_processing import ImageProcessingManager
 from .deep_learning.prompt import ClipInterrogator, Promptist
-from .deep_learning.diffusion import StableDiffusion, ControlNet
+from .deep_learning.diffusion import StableDiffusion, ControlNetStableDiffusion
 
 
 class Backend:
     """
-    Represents a Backend.
+    Represents the backend of the application.
 
     Attributes
     ----------
         image_processing_manager: ImageProcessingManager
-            manager of the different image processing method
+            manager of the different image processing available
         clip_interrogator: ClipInterrogator
-            ...
+            object allowing to transform the image into a prompt
         promptist: Promptist
-            ...
+            object allowing to improve a prompt
         stable_diffusion: StableDiffusion
-            ...
-        control_net: ControlNet
-            ...
+            object allowing to generate images using only StableDiffusion
+        controlnet: ControlNetStableDiffusion
+            object allowing to generate images using ControlNet + StableDiffusion
     """
-    def __init__(
-        self
-    ):
-        """ Initializes a Backend. """
+    def __init__(self):
+        """ Initializes the backend of the application. """
         # ----- Attributes ----- #
-        # Image processing
+        # Manager of the different image processing available
         self.image_processing_manager = ImageProcessingManager()
 
-        # Image captioning
-        self.clip_interrogator = ClipInterrogator
-        self.promptist = Promptist
+        # Object allowing to transform the image into a prompt
+        self.clip_interrogator: type | ClipInterrogator = ClipInterrogator
 
-        # Image generation
-        self.stable_diffusion = StableDiffusion
-        self.control_net = ControlNet
+        # Object allowing to improve a prompt
+        self.promptist: type | Promptist = Promptist
+
+        # Object allowing to generate images using only StableDiffusion
+        self.stable_diffusion: type | StableDiffusion = StableDiffusion
+
+        # Object allowing to generate images using ControlNet + StableDiffusion
+        self.controlnet: type | ControlNetStableDiffusion = ControlNetStableDiffusion
 
     def check_clip_interrogator(self):
+        """ Instantiates the ClipInterrogator if he is not. """
         if isinstance(self.clip_interrogator, type):
             self.clip_interrogator = self.clip_interrogator()
 
     def check_promptist(self):
+        """ Instantiates the Promptist if he is not. """
         if isinstance(self.promptist, type):
             self.promptist = self.promptist()
 
     def check_stable_diffusion(self):
+        """ Instantiates the StableDiffusion if he is not. """
         if isinstance(self.stable_diffusion, type):
             self.stable_diffusion = self.stable_diffusion()
 
-    def check_control_net(
-        self,
-        processing_ids: List[str]
-    ):
-        if isinstance(self.control_net, type):
-            self.control_net = self.control_net(processing_ids=processing_ids)
+    def check_controlnet(self, controlnet_ids: List[str]):
+        """
+        Instantiates the ControlNetStableDiffusion if the ControlNet ids have been modified.
 
-    def reset_control_net(self):
-        """ Resets the ControlNet. """
-        self.control_net = ControlNet
+        Parameters
+        ----------
+            controlnet_ids: List[str]
+                list of the ControlNet to use
+        """
+        if isinstance(self.controlnet, type) or controlnet_ids != self.controlnet.controlnet_ids:
+            self.controlnet = ControlNetStableDiffusion(controlnet_ids=controlnet_ids)

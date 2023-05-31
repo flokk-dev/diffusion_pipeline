@@ -7,7 +7,7 @@ Purpose:
 """
 
 
-# IMPORT: data processing
+# IMPORT: utils
 import numpy as np
 
 # IMPORT: deep learning
@@ -18,24 +18,22 @@ from src.backend.image_processing.image_processing import ImageProcessing
 
 
 class ContentShuffle(ImageProcessing):
-    """ Represents a ContentShuffle. """
-    control_net_id: str = None
+    """ Represents a ContentShuffle processing. """
 
     def __init__(
             self
     ):
-        """ Initializes a ContentShuffle. """
+        """ Initializes a ContentShuffle processing. """
         super(ContentShuffle, self).__init__()
 
         # ----- Attributes ----- #
-        # Processor
+        # Object allowing to process images
         self._processor = ContentShuffleDetector()
 
-    def __call__(
-        self,
-        image: np.ndarray
-    ) -> np.ndarray:
+    def __call__(self, image: np.ndarray) -> np.ndarray:
         """
+        Runs the processing into the image.
+
         Parameters
         ----------
             image: np.ndarray
@@ -44,10 +42,10 @@ class ContentShuffle(ImageProcessing):
         Returns
         ----------
             np.ndarray
-                ContentShuffle mask
+                processed image
         """
-        # Processes the image
-        return self._resize(
-            self._processor(input_image=image, return_pil=False),
-            shape=image.shape
-        )
+        # Runs the processing into the image
+        output_image: np.ndarray = self._processor(input_image=image, return_pil=False)
+
+        # Resizes the output image to its original shape
+        return self._resize(image=output_image, shape=image.shape)

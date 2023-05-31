@@ -6,9 +6,11 @@ Version: 1.0
 Purpose:
 """
 
+# IMPORT: utils
+from typing import *
+import numpy as np
 
 # IMPORT: data processing
-import numpy as np
 from controlnet_aux import CannyDetector
 
 
@@ -17,41 +19,37 @@ from src.backend.image_processing.image_processing import ImageProcessing
 
 
 class Canny(ImageProcessing):
-    """ Represents a Canny. """
-    control_net_id: str = "lllyasviel/sd-controlnet-canny"
+    """ Represents a Canny processing. """
 
-    def __init__(
-            self
-    ):
-        """ Initializes a Canny. """
+    def __init__(self):
+        """ Initializes a Canny processing. """
         super(Canny, self).__init__()
 
         # ----- Attributes ----- #
-        self._processor = CannyDetector()
+        # Object allowing to process images
+        self._processor: CannyDetector = CannyDetector()
 
-    def __call__(
-        self,
-        image: np.ndarray,
-        low_threshold: int = 100,
-        high_threshold: int = 200,
-    ) -> np.ndarray:
+    def __call__(self, image: np.ndarray, thresholds: Tuple[int] = (100, 200)) -> np.ndarray:
         """
+        Runs the processing into the image.
+
         Parameters
         ----------
             image: np.ndarray
                 image to process
-            low_threshold: int
-                canny's low threshold
-            high_threshold: int
-                canny's high threshold
+            thresholds: Tuple[int]
+                low and high canny threshold
 
         Returns
         ----------
             np.ndarray
-                Canny mask
+                processed image
         """
-        # Processes the image
-        return self._resize(
-            self._processor(image, low_threshold=low_threshold, high_threshold=high_threshold),
-            shape=image.shape
+        # Runs the processing into the image
+        output_image: np.ndarray = self._processor(
+            img=image,
+            low_threshold=thresholds[0], high_threshold=thresholds[1]
         )
+
+        # Resizes the output image to its original shape
+        return self._resize(image=output_image, shape=image.shape)

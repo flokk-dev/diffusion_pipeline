@@ -7,7 +7,7 @@ Purpose:
 """
 
 
-# IMPORT: data processing
+# IMPORT: utils
 import numpy as np
 
 # IMPORT: deep learning
@@ -18,26 +18,23 @@ from src.backend.image_processing.image_processing import ImageProcessing
 
 
 class Zoe(ImageProcessing):
-    """ Represents an Zoe. """
+    """ Represents a Zoe processing. """
     control_net_id: str = None
 
-    def __init__(
-            self
-    ):
-        """ Initializes an Zoe. """
+    def __init__(self):
+        """ Initializes a Zoe processing. """
         super(Zoe, self).__init__()
 
         # ----- Attributes ----- #
-        # Processor
-        self._processor = ZoeDetector.from_pretrained(
+        # Object allowing to process images
+        self._processor: ZoeDetector = ZoeDetector.from_pretrained(
             pretrained_model_or_path="lllyasviel/Annotators"
         )
 
-    def __call__(
-        self,
-        image: np.ndarray
-    ) -> np.ndarray:
+    def __call__(self, image: np.ndarray) -> np.ndarray:
         """
+        Runs the processing into the image.
+
         Parameters
         ----------
             image: np.ndarray
@@ -46,10 +43,10 @@ class Zoe(ImageProcessing):
         Returns
         ----------
             np.ndarray
-                PidiNet mask
+                processed image
         """
-        # Processes the image
-        return self._resize(
-            self._processor(input_image=image, return_pil=False),
-            shape=image.shape
-        )
+        # Runs the processing into the image
+        output_image: np.ndarray = self._processor(input_image=image)
+
+        # Resizes the output image to its original shape
+        return self._resize(image=output_image, shape=image.shape)

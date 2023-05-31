@@ -1,4 +1,7 @@
+# Page
+from .page import Page
+
 # Pages
 from .image_processing import ImageProcessingPage
-from .image_captioning import ImageCaptioningPage
-from .image_generation import GenerationPage
+from .image_to_prompt import ImageToPromptPage
+from .image_generation import ImageGenerationPage

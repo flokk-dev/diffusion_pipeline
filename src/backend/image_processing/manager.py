@@ -8,6 +8,7 @@ Purpose:
 
 # IMPORT: utils
 from typing import *
+import numpy as np
 
 # IMPORT: project
 from .image_processing import ImageProcessing
@@ -15,12 +16,12 @@ from .image_processings import *
 
 
 class ImageProcessingManager(Dict):
-    """ Represents a ImageProcessingManager. """
+    """ Represents the object allowing to manage multiple image processing. """
     def __init__(self):
-        """ Initializes a Backend. """
+        """ Initializes the object allowing to manage multiple image processing. """
         super(ImageProcessingManager, self).__init__()
 
-        # Image processor
+        # Adds all the processing to the manager
         self["canny"]: Canny = Canny
         self["hed"]: Hed = Hed
         self["lineart"]: Lineart = Lineart
@@ -35,25 +36,21 @@ class ImageProcessingManager(Dict):
         self["shuffle"]: ContentShuffle = ContentShuffle
         self["zoe"]: Zoe = Zoe
 
-    def __call__(
-        self,
-        process_id: str
-    ) -> ImageProcessing:
+    def __call__(self, processing_id: str, image: np.ndarray) -> np.ndarray:
         """
-        Returns the ImageProcessing of the specified id.
+        Runs the processing linked to the id into the image.
 
         Parameters
         ----------
-            process_id: str
-                id of the ImageProcessing to use
+            processing_id: str
+                id of an image processing
+            image: np.ndarray
+                image to process
 
         Returns
         ----------
-            ImageProcessing
-                desired ImageProcessing
+            np.ndarray
+                processed image
         """
-        if isinstance(self[process_id], type):
-            self[process_id] = self[process_id]()
-
-        # Processes image
-        return self[process_id]
+        # Runs the processing into the image
+        return self[processing_id]()(image=image)

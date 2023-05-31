@@ -10,7 +10,7 @@ Purpose:
 import streamlit as st
 
 # IMPORT: project
-from src.frontend.pages.page import Page
+from src.frontend.pages import Page
 from src.frontend.components import Component, ImageUploader
 
 from src.backend.image import Images, ImageToProcess
@@ -38,18 +38,18 @@ class ImageProcessingPage(Page):
         # Instantiates the image carousel
         ImageCarousel(page=self, parent=self.parent)
 
-        # Instantiates the image uploader and the processing selector
+        # Row n°1
         cols = self.parent.columns((0.5, 0.5))
 
-        ImageUploader(page=self, parent=cols[0])
-        ProcessingSelector(page=self, parent=cols[1])
+        ImageUploader(page=self, parent=cols[0])  # displays the uploaded images
+        ProcessingApplier(page=self, parent=cols[1])  # allowing to select and apply a processing
 
 
 class ImageCarousel(Component):
-    """ Represents the image carousel. """
+    """ Represents the component that displays images. """
     def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Represents the image carousel.
+        Represents the component that displays images.
 
         Parameters
         ----------
@@ -76,9 +76,8 @@ class ImageCarousel(Component):
             # Creates the slider allowing to navigate between the uploaded images
             if len(self.session_state["images"]) > 1:
                 st.slider(
-                    key=f"{self.page.ID}_slider",
-                    label="slider",
-                    label_visibility="collapsed",
+                    key=f"{self.page.ID}_{self.ID}_slider",
+                    label="slider", label_visibility="collapsed",
                     min_value=0,
                     max_value=len(self.session_state["images"]) - 1,
                     value=self.session_state["image_idx"],
@@ -87,14 +86,14 @@ class ImageCarousel(Component):
 
     def on_change(self):
         # Updates the index of the current image according to the slider value
-        self.session_state["image_idx"] = st.session_state[f"{self.page.ID}_slider"]
+        self.session_state["image_idx"] = st.session_state[f"{self.page.ID}_{self.ID}_slider"]
 
 
-class ProcessingSelector(Component):
-    """ Represents a processing selector. """
+class ProcessingApplier(Component):
+    """ Represents the component allowing to select and apply a processing.  """
     def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes a processing selector.
+        Initializes the component allowing to select and apply a processing.
 
         Parameters
         ----------
@@ -103,17 +102,17 @@ class ProcessingSelector(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(ProcessingSelector, self).__init__(page, parent, component_id="processing_selector")
+        super(ProcessingApplier, self).__init__(page, parent, component_id="processing_applier")
 
         # ----- Components ----- #
         # Retrieves the processing options
         options = [""] + list(st.session_state.backend.image_processing_manager.keys())
 
-        with self.parent.form(key=f"{self.page.ID}_form"):
+        with self.parent.form(key=f"{self.page.ID}_{self.ID}_form"):
             # Creates the select-box allowing to select the processing to use
             st.selectbox(
-                label="selectbox", label_visibility="collapsed",
-                key=f"{self.page.ID}_selectbox",
+                key=f"{self.page.ID}_{self.ID}_select_box",
+                label="select box", label_visibility="collapsed",
                 options=options,
                 index=options.index(
                     self.session_state["images"][self.session_state["image_idx"]].processing
@@ -122,7 +121,7 @@ class ProcessingSelector(Component):
 
             # Creates the button allowing to run the processing
             st.form_submit_button(
-                label="Apply the processing",
+                label="Run the processing",
                 on_click=self.on_click,
                 use_container_width=True
             )
@@ -133,7 +132,7 @@ class ProcessingSelector(Component):
             return
 
         # Retrieves the selected processing
-        processing = st.session_state[f"{self.page.ID}_selectbox"]
+        processing = st.session_state[f"{self.page.ID}_{self.ID}_select_box"]
 
         # If no process has been selected return
         if processing == "":
@@ -141,7 +140,8 @@ class ProcessingSelector(Component):
 
         # Runs the selected processing on the current image
         self.session_state["images"][self.session_state["image_idx"]].mask = \
-            st.session_state.backend.image_processing_manager(processing)(
+            st.session_state.backend.image_processing_manager(
+                processing_id=processing,
                 image=self.session_state["images"][self.session_state["image_idx"]].image
             )
 

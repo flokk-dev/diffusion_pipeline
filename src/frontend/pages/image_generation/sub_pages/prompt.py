@@ -6,24 +6,20 @@ Version: 1.0
 Purpose:
 """
 
-# IMPORT: UI
+# IMPORT: utils
 import streamlit as st
 
 # IMPORT: project
-from src.frontend.pages.page import Page
-from src.frontend.components.component import Component
+from src.frontend.pages import Page
+from src.frontend.components import Component
 
 
 class Prompts(Component):
-    """ Represents a Prompts. """
+    """ Represents the sub-page where to specify the prompt and the negative prompt. """
 
-    def __init__(
-            self,
-            page: Page,
-            parent: st._DeltaGenerator
-    ):
+    def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes a Prompts.
+        Initializes the component where to specify the prompt and the negative prompt.
 
         Parameters
         ----------
@@ -32,32 +28,23 @@ class Prompts(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(Prompts, self).__init__(page=page, parent=parent)
-        self.parent.info(
-            "Here, you can specify a prompt and a negative prompt (to avoid some key words) "
-            "that will then guide the generation."
-        )
+        super(Prompts, self).__init__(page, parent, component_id="prompts")
+        self.parent.info("Here, you can specify a prompt and a negative prompt (to avoid some key words) that will then guide the generation.")
 
         # ----- Components ----- #
+        # Row n°1
         cols = self.parent.columns([0.5, 0.5])
 
-        # Col n°1
-        Prompt(page=self.page, parent=cols[0])
-
-        # Col n°2
-        NegativePrompt(page=self.page, parent=cols[1])
+        Prompt(page=self.page, parent=cols[0])  # where to specify the prompt
+        NegativePrompt(page=self.page, parent=cols[1])  # where to specify the negative prompt
 
 
 class Prompt(Component):
-    """ Represents a Prompt. """
+    """ Represents the component where to specify the prompt. """
 
-    def __init__(
-            self,
-            page: Page,
-            parent: st._DeltaGenerator
-    ):
+    def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes a Prompt.
+        Initializes the component where to specify the prompt.
 
         Parameters
         ----------
@@ -66,9 +53,10 @@ class Prompt(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(Prompt, self).__init__(page=page, parent=parent)
+        super(Prompt, self).__init__(page, parent, component_id="prompt")
 
         # ----- Session state ----- #
+        # Creates the prompt to use during generation
         if "prompt" not in self.session_state:
             self.session_state["prompt"] = ""
 
@@ -76,11 +64,11 @@ class Prompt(Component):
         with self.parent.expander(label="", expanded=True):
             # Creates the text_area allowing to specify the prompt
             st.text_area(
+                key=f"{self.page.ID}_{self.ID}_text_area",
                 label="text_area", label_visibility="collapsed",
-                key=f"{self.page.ID}_prompt",
-                height=125,
-                placeholder="Here, you have to describe the content of the generation",
                 value=self.session_state["prompt"],
+                placeholder="Here, you have to describe the content of the generation",
+                height=125,
                 on_change=self.on_change
             )
 
@@ -93,7 +81,7 @@ class Prompt(Component):
 
     def on_change(self):
         # Assigns the value of the text_area to the prompt
-        self.session_state["prompt"] = st.session_state[f"{self.page.ID}_prompt"]
+        self.session_state["prompt"] = st.session_state[f"{self.page.ID}_{self.ID}_text_area"]
 
     def on_click(self):
         # If the text_area containing the prompt to improve is empty
@@ -111,15 +99,11 @@ class Prompt(Component):
 
 
 class NegativePrompt(Component):
-    """ Represents a NegativePrompt. """
+    """ Represents the component where to specify the negative prompt. """
 
-    def __init__(
-            self,
-            page: Page,
-            parent: st._DeltaGenerator
-    ):
+    def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes a NegativePrompt.
+        Initializes the component where to specify the negative prompt.
 
         Parameters
         ----------
@@ -128,9 +112,10 @@ class NegativePrompt(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(NegativePrompt, self).__init__(page=page, parent=parent)
+        super(NegativePrompt, self).__init__(page, parent, component_id="negative_prompt")
 
         # ----- Session state ----- #
+        # Creates the negative prompt to use during generation
         if "negative_prompt" not in self.session_state:
             self.session_state["negative_prompt"] = ""
 
@@ -138,12 +123,11 @@ class NegativePrompt(Component):
         with self.parent.expander(label="", expanded=True):
             # Creates the text_area allowing to specify the negative prompt
             st.text_area(
+                key=f"{self.page.ID}_{self.ID}_text_area",
                 label="text_area", label_visibility="collapsed",
-                key=f"{self.page.ID}_negative_prompt",
-                height=125,
-                placeholder="Here, you have to specify what you don't want in your generation "
-                            "(key words)",
                 value=self.session_state["negative_prompt"],
+                placeholder="Here, you have to specify what you don't want in your generation (key words)",
+                height=125,
                 on_change=self.on_change
             )
 
@@ -156,7 +140,8 @@ class NegativePrompt(Component):
 
     def on_change(self):
         # Assigns the value of the text_area to the negative prompt
-        self.session_state["negative_prompt"] = st.session_state[f"{self.page.ID}_negative_prompt"]
+        self.session_state["negative_prompt"] = \
+            st.session_state[f"{self.page.ID}_{self.ID}_text_area"]
 
     def on_click(self):
         # Loads the default negative prompt

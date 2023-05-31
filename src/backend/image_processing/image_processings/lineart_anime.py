@@ -7,7 +7,7 @@ Purpose:
 """
 
 
-# IMPORT: data processing
+# IMPORT: utils
 import numpy as np
 
 # IMPORT: deep learning
@@ -18,25 +18,22 @@ from src.backend.image_processing.image_processing import ImageProcessing
 
 
 class LineartAnime(ImageProcessing):
-    """ Represents an LineartAnime. """
-    control_net_id: str = None
+    """ Represents a LineartAnime processing. """
 
-    def __init__(
-            self
-    ):
-        """ Initializes an LineartAnime. """
+    def __init__(self):
+        """ Initializes a LineartAnime processing. """
         super(LineartAnime, self).__init__()
 
         # ----- Attributes ----- #
-        self._processor = LineartAnimeDetector.from_pretrained(
+        # Object allowing to process images
+        self._processor: LineartAnimeDetector = LineartAnimeDetector.from_pretrained(
             pretrained_model_or_path="lllyasviel/Annotators"
         )
 
-    def __call__(
-        self,
-        image: np.ndarray
-    ) -> np.ndarray:
+    def __call__(self, image: np.ndarray) -> np.ndarray:
         """
+        Runs the processing into the image.
+
         Parameters
         ----------
             image: np.ndarray
@@ -45,11 +42,10 @@ class LineartAnime(ImageProcessing):
         Returns
         ----------
             np.ndarray
-                LineartAnime mask
+                processed image
         """
-        # Processes the image
-        return self._resize(
-            self._processor(input_image=image, return_pil=False),
-            shape=image.shape
-        )
+        # Runs the processing into the image
+        output_image: np.ndarray = self._processor(input_image=image, return_pil=False)
 
+        # Resizes the output image to its original shape
+        return self._resize(image=output_image, shape=image.shape)

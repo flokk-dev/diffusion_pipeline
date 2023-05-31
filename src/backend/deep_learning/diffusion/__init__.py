@@ -1,5 +1,2 @@
-# StableDiffusion
 from .stable_diffusion import StableDiffusion
-
-# ControlNet
-from .controlnet import ControlNet
+from .controlnet_stable_diffusion import ControlNetStableDiffusion

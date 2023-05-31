@@ -7,7 +7,7 @@ Purpose:
 """
 
 
-# IMPORT: data processing
+# IMPORT: utils
 import numpy as np
 
 # IMPORT: deep learning
@@ -18,25 +18,24 @@ from src.backend.image_processing.image_processing import ImageProcessing
 
 
 class Hed(ImageProcessing):
-    """ Represents an Hed. """
-    control_net_id: str = "lllyasviel/sd-controlnet-hed"
+    """ Represents an HED processing. """
 
     def __init__(
             self
     ):
-        """ Initializes an Hed. """
+        """ Initializes an HED processing. """
         super(Hed, self).__init__()
 
         # ----- Attributes ----- #
-        self._processor = HEDdetector.from_pretrained(
+        # Object allowing to process images
+        self._processor: HEDdetector = HEDdetector.from_pretrained(
             pretrained_model_or_path="lllyasviel/Annotators"
         )
 
-    def __call__(
-        self,
-        image: np.ndarray
-    ) -> np.ndarray:
+    def __call__(self, image: np.ndarray) -> np.ndarray:
         """
+        Runs the processing into the image.
+
         Parameters
         ----------
             image: np.ndarray
@@ -45,10 +44,10 @@ class Hed(ImageProcessing):
         Returns
         ----------
             np.ndarray
-                Hed mask
+                processed image
         """
-        # Processes the image
-        return self._resize(
-            self._processor(input_image=image, return_pil=False),
-            shape=image.shape
-        )
+        # Runs the processing into the image
+        output_image: np.ndarray = self._processor(input_image=image, return_pil=False)
+
+        # Resizes the output image to its original shape
+        return self._resize(image=output_image, shape=image.shape)

@@ -10,10 +10,10 @@ Purpose:
 import streamlit as st
 
 # IMPORT: project
-from src.frontend.pages.page import Page
+from src.frontend.pages import Page
 
 
-class Component(st._DeltaGenerator):
+class Component:
     """ Represents a page's component. """
     def __init__(self, page: Page, parent: st._DeltaGenerator, component_id: str):
         """
@@ -28,8 +28,6 @@ class Component(st._DeltaGenerator):
             component_id: str
                 unique id of the component
         """
-        super(Component, self).__init__()
-
         # ----- Attributes ----- #
         self.ID: str = component_id
 

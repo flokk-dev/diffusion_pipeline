@@ -6,41 +6,34 @@ Version: 1.0
 Purpose:
 """
 
-# IMPORT: data processing
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
 # IMPORT: deep learning
-from clip_interrogator import Config, Interrogator
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 class Promptist:
     """
-    Represents a Promptist.
+    Represents an object allowing to improve prompts
 
     Attributes
     ----------
         _model: AutoModelForCausalLM
-            model needed to improve the prompts
+            model allowing to improve prompts
     """
 
     def __init__(self):
-        """ Initializes a Promptist. """
+        """ Initializes an object allowing to improve prompts. """
         # ----- Attributes ----- #
-        # Model
+        # Model allowing to improve prompts
         self._model: AutoModelForCausalLM = AutoModelForCausalLM.from_pretrained(
             "microsoft/Promptist"
         )
 
-        # Tokenizer
+        # Object allowing to tokenize strings
         self._tokenizer = AutoTokenizer.from_pretrained("gpt2")
         self._tokenizer.pad_token = self._tokenizer.eos_token
         self._tokenizer.padding_side = "left"
 
-    def __call__(
-            self,
-            prompt: str
-    ) -> str:
+    def __call__(self, prompt: str) -> str:
         """
         Parameters
         ----------
@@ -52,7 +45,7 @@ class Promptist:
             str
                 improved prompt
         """
-        # Tokenizes the prompt
+        # Transforms the string into a token
         input_ids = self._tokenizer(prompt.strip() + " Rephrase:", return_tensors="pt").input_ids
         eos_id = self._tokenizer.eos_token_id
 
@@ -63,6 +56,6 @@ class Promptist:
             pad_token_id=eos_id, length_penalty=-1.0
         )
 
-        # Untokenizes the output
+        # Transforms the token into a string
         output_texts = self._tokenizer.batch_decode(output, skip_special_tokens=True)
         return output_texts[0].replace(prompt + " Rephrase:", "").strip()

@@ -14,15 +14,15 @@ from PIL import Image
 from paths import FAVICON
 
 from src.backend import Backend
-from src.frontend.pages import ImageProcessingPage, ImageCaptioningPage, GenerationPage
+from src.frontend.pages import ImageProcessingPage, ImageToPromptPage, ImageGenerationPage
 
 
 class App:
     """ Represents the streamlit application. """
     PAGES = {
         "IMAGE PROCESSING": ImageProcessingPage,
-        "IMAGE CAPTIONING": ImageCaptioningPage,
-        "IMAGE GENERATION": GenerationPage
+        "IMAGE TO PROMPT": ImageToPromptPage,
+        "IMAGE GENERATION": ImageGenerationPage
     }
 
     def __init__(self):
@@ -32,6 +32,7 @@ class App:
         # ----- Session state ----- #
         # Instantiates the backend of the application
         if "backend" not in st.session_state:
+            print("here")
             st.session_state.backend = Backend()
 
         # ----- Components ----- #

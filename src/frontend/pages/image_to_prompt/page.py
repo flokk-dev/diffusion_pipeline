@@ -6,21 +6,21 @@ Version: 1.0
 Purpose:
 """
 
-# IMPORT: UI
+# IMPORT: utils
 import streamlit as st
 
 # IMPORT: project
-from src.frontend.pages.page import Page
+from src.frontend.pages import Page
 from src.frontend.components import Component, ImageUploader
 
 from src.backend.image import Images, ImageToDescribe
 
 
-class ImageCaptioningPage(Page):
-    """ Represents the page allowing to describe (prompt) an image. """
+class ImageToPromptPage(Page):
+    """ Represents the page allowing transform images into prompts. """
     def __init__(self, parent: st._DeltaGenerator):
-        """ Initializes the page allowing to describe (prompt) an image. """
-        super(ImageCaptioningPage, self).__init__(parent, page_id="image_captioning")
+        """ Initializes the page allowing transform images into prompts. """
+        super(ImageToPromptPage, self).__init__(parent, page_id="image_captioning")
 
         # ----- Session state ----- #
         # Creates the list of images to process
@@ -33,22 +33,23 @@ class ImageCaptioningPage(Page):
 
         # ----- Components ----- #
         # Writes the purpose of the page
-        self.parent.info("This page allows you to generate a prompt that describes an image.")
+        self.parent.info("This page allows you to transform images into prompts.")
 
+        # Row n°1
         cols = self.parent.columns((0.5, 0.5))
-        # Instantiates the image carousel and the image describer
-        ImageCarousel(page=self, parent=cols[0])
-        ImageCaptioner(page=self, parent=cols[0])
 
-        # Instantiates the image uploader
-        ImageUploader(page=self, parent=cols[1])
+        ImageCarousel(page=self, parent=cols[0])  # displays the uploaded images
+        ImageToPrompt(page=self, parent=cols[0])  # allowing to transform images into prompts
+
+        # Row n°2
+        ImageUploader(page=self, parent=cols[1])  # allowing to upload images
 
 
 class ImageCarousel(Component):
-    """ Represents the image carousel. """
+    """ Represents the component that displays the uploaded images. """
     def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes the image carousel.
+        Initializes the component that displays the uploaded images.
 
         Parameters
         ----------
@@ -70,23 +71,24 @@ class ImageCarousel(Component):
             # Creates the slider allowing to navigate between the uploaded images
             if len(self.session_state["images"]) > 1:
                 st.slider(
+                    key=f"{self.page.ID}_{self.ID}_slider",
                     label="slider", label_visibility="collapsed",
-                    key=f"{self.page.ID}_slider",
-                    min_value=0, max_value=len(self.session_state["images"]) - 1,
+                    min_value=0,
+                    max_value=len(self.session_state["images"]) - 1,
                     value=self.session_state["image_idx"],
                     on_change=self.on_change
                 )
 
     def on_change(self):
         # Updates the index of the current image according to the slider value
-        self.session_state["image_idx"] = st.session_state[f"{self.page.ID}_slider"]
+        self.session_state["image_idx"] = st.session_state[f"{self.page.ID}_{self.ID}_slider"]
 
 
-class ImageCaptioner(Component):
-    """ Represents a component allowing to generate a prompt for an image. """
+class ImageToPrompt(Component):
+    """ Represents a component allowing to transform the image into a prompt. """
     def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes a component allowing to generate a prompt for an image.
+        Initializes a component allowing to transform the image into a prompt.
 
         Parameters
         ----------
@@ -95,15 +97,15 @@ class ImageCaptioner(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(ImageCaptioner, self).__init__(page, parent, component_id="image_captioner")
+        super(ImageToPrompt, self).__init__(page, parent, component_id="image_to_prompt")
 
         # ----- Components ----- #
         with self.parent.form(key=f"{self.page.ID}_form"):
             # Creates the text_area in which to display the prompt
             st.text_area(
+                key=f"{self.page.ID}_{self.ID}_prompt",
                 label="text_area", label_visibility="collapsed",
-                key=f"{self.page.ID}_text_area",
-                value=self.session_state["images"][self.session_state["image_idx"]].caption,
+                value=self.session_state["images"][self.session_state["image_idx"]].prompt,
                 height=125
             )
 
@@ -126,7 +128,7 @@ class ImageCaptioner(Component):
         )
 
         # Updates the content of the text area
-        st.session_state[f"{self.page_id}_text_area"] = prompt
+        st.session_state[f"{self.page.ID}_{self.ID}_prompt"] = prompt
 
         # Updates the prompt of the current image
         self.session_state["images"][self.session_state["image_idx"]].prompt = prompt
