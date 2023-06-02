@@ -19,11 +19,11 @@ from src.frontend.components.component import Component
 
 
 class FeedbackPage(Component):
-    """ Represents the sub-page allowing to generate images. """
+    """ Represents the sub-page allowing to improve the generation using ranking feedback. """
 
     def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes the sub-page allowing to generate images.
+        Initializes the sub-page allowing to improve the generation using ranking feedback.
 
         Parameters
         ----------
@@ -33,7 +33,7 @@ class FeedbackPage(Component):
                 parent of the component
         """
         super(FeedbackPage, self).__init__(page, parent, component_id="image_generation")
-        self.parent.info("Here, you can view the generated images and improve them via feedback.")
+        self.parent.info("Here, you can view the generated images and improve them via feedback")
 
         # ----- Session state ----- #
         # Creates the list of generated images
@@ -90,7 +90,7 @@ class ImageDisplayer(Component):
             # For each generated image
             for idx, image in enumerate(self.session_state["generated_images"]):
                 # Display the generated image in the wright column
-                cols[idx % modulo].image(image=image, use_column_width=True)
+                cols[idx % modulo].image(image=image, caption=str(idx + 1), use_column_width=True)
 
 
 class RankingFeedback(Component):
@@ -113,21 +113,32 @@ class RankingFeedback(Component):
         with self.parent.form(key=f"{self.page.ID}_{self.ID}_form"):
             # Creates the button allowing to generate an image
             if isinstance(st.session_state.backend.ranking_feedback, type):
-                placeholder = "In order to start to improve the image, please give the index of " \
-                              "the best image."
+                col1, col2 = st.columns([0.5, 0.5])
+                col1.text_input(
+                    key=f"{self.page.ID}_{self.ID}_feedback",
+                    label="feedback", label_visibility="collapsed",
+                    placeholder="Please indicate the index of the best image"
+                )
+
+                col2.text_input(
+                    key=f"{self.page.ID}_{self.ID}_num_images",
+                    label="number of images", label_visibility="collapsed",
+                    placeholder="Please specify the number of images to generate at each step"
+                )
+
             else:
                 placeholder = \
-                    "Gradient estimation step, rank the images from best to worst (ex: 6-1-3-4)" \
+                    "Please rank the images from best to worst (ex: 6-1-3-4)" \
                     if st.session_state.backend.ranking_feedback.step == "gradient_estimation" \
-                    else "Line search step, give the index of the best image" \
+                    else "Please specify the index of the best image" \
 
-            st.text_input(
-                key=f"{self.page.ID}_{self.ID}_feedback",
-                label="LoRA", label_visibility="collapsed",
-                placeholder=placeholder
-            )
+                st.text_input(
+                    key=f"{self.page.ID}_{self.ID}_feedback",
+                    label="feedback", label_visibility="collapsed",
+                    placeholder=placeholder
+                )
 
-            # Creates the button allowing to generate an image
+            # Creates the button allowing to run the ranking feedback
             st.form_submit_button(
                 label="Give feedback",
                 on_click=self.on_click,
@@ -145,7 +156,7 @@ class RankingFeedback(Component):
             st.session_state.backend.ranking_feedback = st.session_state.backend.ranking_feedback(
                 latent=self.session_state["latents"][best_image_idx],
                 image=self.session_state["generated_images"][best_image_idx],
-                num_latents=int(st.session_state[f"{self.page.ID}_hyperparameters_num_images"]),
+                num_latents=int(st.session_state[f"{self.page.ID}_{self.ID}_num_images"]),
                 smoothing_factor=0.1,
                 lr=2.0
             )
@@ -158,12 +169,10 @@ class RankingFeedback(Component):
         # Launches an iteration
         latents = st.session_state.backend.ranking_feedback.gen_new_latents()
         _, generated_images = self.generate_image(latents)
-        generated_images = st.session_state.backend.ranking_feedback.adjust_generated_images(
-            generated_images
-        )
 
         # Updates the in memory generated images
-        self.session_state["generated_images"] = generated_images
+        self.session_state["generated_images"] = \
+            st.session_state.backend.ranking_feedback.adjust_generated_images(generated_images)
 
     def generate_image(
         self,
@@ -177,50 +186,20 @@ class RankingFeedback(Component):
             latents: torch.Tensor
                 latents from which to start the generation
         """
-        # If the prompt is empty
-        if self.session_state["prompt"] == "":
-            st.sidebar.warning(
-                "WARNING: you need to provide a ranking before trying to rank the masks."
-            )
-            return
-
-        # Retrieves the parameters needed to generate an image
-        args = {
-            "prompt": self.session_state["prompt"],
-            "negative_prompt": st.session_state[f"{self.page.ID}_prompt_negative_prompt"],
-            "num_images": st.session_state[f"{self.page.ID}_hyperparameters_num_images"],
-            "width": st.session_state[f"{self.page.ID}_hyperparameters_width"],
-            "height": st.session_state[f"{self.page.ID}_hyperparameters_height"],
-            "num_steps": st.session_state[f"{self.page.ID}_hyperparameters_num_steps"],
-            "guidance_scale": st.session_state[f"{self.page.ID}_hyperparameters_guidance_scale"],
-            "latents": latents,
-            "seed": None
-            if st.session_state[f"{self.page.ID}_hyperparameters_seed"] == -1
-            else st.session_state[f"{self.page.ID}_hyperparameters_seed"]
-        }
-
         # If no mask has been uploaded
         if len(self.session_state["images"]) == 0:
             # Generates images using only StableDiffusion
             st.session_state.backend.check_stable_diffusion()
-            return st.session_state.backend.stable_diffusion(**args)
+            return st.session_state.backend.stable_diffusion(
+                **self.session_state["generation_args"],
+                num_images=latents.shape[0],
+                latents=latents
+            )
 
         else:
-            # Retrieves the uploaded masks and their corresponding (processing, weight)
-            input_masks, controlnet_ids, weights = list(), list(), list()
-            for idx in range(len(self.session_state["images"])):
-                # If an image has been uploaded without providing the processing used
-                if self.session_state["images"][idx].processing == "":
-                    return
-
-                input_masks.append(self.session_state["images"][idx].image)
-                controlnet_ids.append(self.session_state["images"][idx].processing)
-                weights.append(self.session_state["images"][idx].weight)
-
             # Generates images using ControlNet + StableDiffusion
-            st.session_state.backend.check_controlnet(controlnet_ids=controlnet_ids)
             return st.session_state.backend.controlnet(
-                images=input_masks,
-                weights=weights,
-                **args
+                **self.session_state["generation_args"],
+                num_images=latents.shape[0],
+                latents=latents
             )

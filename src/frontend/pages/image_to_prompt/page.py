@@ -13,7 +13,7 @@ import streamlit as st
 from src.frontend.pages import Page
 from src.frontend.components import Component, ImageUploader
 
-from src.backend.image import Images, ImageToDescribe
+from src.frontend.images import ImageToDescribe
 
 
 class ImageToPromptPage(Page):
@@ -25,7 +25,7 @@ class ImageToPromptPage(Page):
         # ----- Session state ----- #
         # Creates the list of images to process
         if "images" not in self.session_state:
-            self.session_state["images"]: Images = Images(image_type=ImageToDescribe)
+            self.session_state["images"]: list = list()
 
         # Creates the idx indicating the current image
         if "image_idx" not in self.session_state:
@@ -35,14 +35,19 @@ class ImageToPromptPage(Page):
         # Writes the purpose of the page
         self.parent.info("This page allows you to generate a prompt from an image")
 
-        # Row n°1
-        cols = self.parent.columns((0.5, 0.5))
+        # If at least 1 image have been loaded
+        if len(self.session_state["images"]) > 0:
+            # Row n°2
+            cols = self.parent.columns((0.5, 0.5))
 
-        ImageCarousel(page=self, parent=cols[0])  # displays the uploaded images
-        ImageToPrompt(page=self, parent=cols[0])  # allows to generate a prompt from an image
+            ImageUploader(ImageToDescribe, page=self, parent=cols[1])  # allows to upload images
 
-        # Row n°2
-        ImageUploader(page=self, parent=cols[1])  # allows to upload images
+            # Row n°1
+            ImageCarousel(page=self, parent=cols[0])  # displays the images
+            ImageToPrompt(page=self, parent=cols[0])  # allows to generate a prompt from an image
+
+        else:
+            ImageUploader(ImageToDescribe, page=self, parent=self.parent)  # allows to upload images
 
 
 class ImageCarousel(Component):
@@ -117,21 +122,11 @@ class ImageToPrompt(Component):
             )
 
     def on_click(self):
-        # If no image has been uploaded
-        if len(self.session_state["images"]) == 0:
-            st.sidebar.warning(
-                "WARNING: to use the image to prompt component, you have to provide an image."
-            )
-            return
-
         # Generates the prompt of the current image
         st.session_state.backend.check_clip_interrogator()
         prompt = st.session_state.backend.clip_interrogator(
             image=self.session_state["images"][self.session_state["image_idx"]].image
         )
-
-        # Updates the content of the text area
-        st.session_state[f"{self.page.ID}_{self.ID}_prompt"] = prompt
 
         # Updates the prompt of the current image
         self.session_state["images"][self.session_state["image_idx"]].prompt = prompt

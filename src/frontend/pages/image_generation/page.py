@@ -22,7 +22,7 @@ class ImageGenerationPage(Page):
         super(ImageGenerationPage, self).__init__(parent, page_id="image_generation")
 
         # ----- Components ----- #
-        tabs = self.parent.tabs(["ControlNet", "Generation", "Feedback"])
+        tabs = self.parent.tabs(["ControlNet", "Generation", "Images"])
 
         # Instantiates the sub-page allowing to upload ControlNet inputs
         ControlNet(page=self, parent=tabs[0])

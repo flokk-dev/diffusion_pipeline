@@ -13,7 +13,7 @@ import streamlit as st
 from src.frontend.pages import Page
 from src.frontend.components import Component, ImageUploader
 
-from src.backend.image import Images, Mask
+from src.frontend.images import Mask
 
 
 class ControlNet(Component):
@@ -38,17 +38,25 @@ class ControlNet(Component):
         # ----- Session state ----- #
         # Creates the list of ControlNet masks
         if "images" not in self.session_state:
-            self.session_state["images"] = Images(image_type=Mask)
+            self.session_state["images"] = list()
 
         # ----- Components ----- #
-        # Row n°1
-        MaskDisplayer(page=self.page, parent=self.parent)  # displays the uploaded ControlNet masks
+        # If at least 1 image have been loaded
+        if len(self.session_state["images"]) > 0:
+            # Row n°1
+            MaskDisplayer(page=self.page, parent=self.parent)  # displays the ControlNet masks
 
-        # Row n°2
-        cols = self.parent.columns((0.5, 0.5))
+            # Row n°2
+            cols = self.parent.columns((0.5, 0.5))
 
-        ImageUploader(page=self.page, parent=cols[0])  # allows to upload images
-        MaskRanker(page=self.page, parent=cols[1])  # allows to rank ControlNet masks
+            ImageUploader(Mask, page=self.page, parent=cols[0])  # allows to upload images
+
+            # If at least 2 images have been loaded
+            if len(self.session_state["images"]) > 1:
+                MaskRanker(page=self.page, parent=cols[1])  # allows to rank ControlNet masks
+
+        else:
+            ImageUploader(Mask, page=self.page, parent=self.parent)  # allows to upload images
 
 
 class MaskDisplayer(Component):
@@ -72,16 +80,18 @@ class MaskDisplayer(Component):
         options = [""] + list(st.session_state.backend.controlnet.CONTROLNET_IDS.keys())
 
         with self.parent.expander(label="", expanded=True):
+            cols = st.columns([1 for _ in range(3)])
+
             # For each in memory image creates a column
-            for idx, col in enumerate(st.columns([1 for _ in self.session_state["images"]])):
+            for idx, col in enumerate(self.session_state["images"]):
                 # Retrieves the current image
                 image = self.session_state["images"][idx]
 
                 # Displays the mask
-                col.image(image=image.image, caption=image.name, use_column_width=True)
+                cols[idx].image(image=image.image, caption=image.name, use_column_width=True)
 
                 # Creates a select box allowing to indicate the processing that gives the mask
-                col.selectbox(
+                cols[idx].selectbox(
                     key=f"{self.page.ID}_{self.ID}_select_box_{idx}",
                     label="select box", label_visibility="collapsed",
                     options=options,
@@ -90,7 +100,7 @@ class MaskDisplayer(Component):
                 )
 
                 # Creates a text_input allowing to indicate the weight of the mask
-                col.text_input(
+                cols[idx].text_input(
                     key=f"{self.page.ID}_{self.ID}_text_input{idx}",
                     label="weight", label_visibility="collapsed",
                     value=image.weight,
@@ -146,23 +156,16 @@ class MaskRanker(Component):
             )
 
     def on_click(self):
-        # If no image has been loaded
-        if len(self.session_state["images"]) <= 1:
-            st.sidebar.warning(
-                "WARNING: you need to provide at least 2 masks before ranking them."
-            )
-            return
-
         # If no rank has been entered
         ranking = st.session_state[f"{self.page.ID}_{self.ID}_text_input"]
-        if len(ranking) == 0:
+        if ranking == "":
             st.sidebar.warning(
                 "WARNING: you need to provide a ranking before trying to rank the masks."
             )
             return
 
         # If the provided ranking isn't conform
-        ranking = [int(idx)-1 for idx in ranking]
+        ranking = [int(idx)-1 for idx in ranking.split("-")]
         if sum(ranking) != sum(range(len(self.session_state["images"]))):
             st.sidebar.warning(
                 "WARNING: there is something wrong with the ranking you provided."

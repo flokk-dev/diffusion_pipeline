@@ -13,7 +13,7 @@ import streamlit as st
 from src.frontend.pages import Page
 from src.frontend.components import Component, ImageUploader
 
-from src.backend.image import Images, ImageToProcess
+from src.frontend.images import ImageToProcess
 
 
 class ImageProcessingPage(Page):
@@ -25,7 +25,7 @@ class ImageProcessingPage(Page):
         # ----- Session state ----- #
         # Creates the list of images to process
         if "images" not in self.session_state:
-            self.session_state["images"]: Images = list()
+            self.session_state["images"]: list = list()
 
         # Creates the idx indicating the current image
         if "image_idx" not in self.session_state:
@@ -37,14 +37,18 @@ class ImageProcessingPage(Page):
             "This tool allows you to process an image in order to create a ControlNet input"
         )
 
-        # Instantiates the image carousel
-        ImageCarousel(page=self, parent=self.parent)
+        # If at least 1 image have been loaded
+        if len(self.session_state["images"]) > 0:
+            ImageCarousel(page=self, parent=self.parent)  # instantiates the image carousel
 
-        # Row n°1
-        cols = self.parent.columns((0.5, 0.5))
+            # Row n°1
+            cols = self.parent.columns((0.5, 0.5))
 
-        ImageUploader(page=self, parent=cols[0])  # displays the uploaded images
-        ProcessingApplier(page=self, parent=cols[1])  # allows to select and apply a processing
+            ImageUploader(ImageToProcess, page=self, parent=cols[0])  # displays the images
+            ProcessingApplier(page=self, parent=cols[1])  # allows to select and apply a processing
+
+        else:
+            ImageUploader(ImageToProcess, page=self, parent=self.parent)  # displays the images
 
 
 class ImageCarousel(Component):
@@ -129,13 +133,6 @@ class ProcessingApplier(Component):
             )
 
     def on_click(self):
-        # If no image has been loaded return
-        if len(self.session_state["images"]) == 0:
-            st.sidebar.warning(
-                "WARNING: you need to import an image before trying to process one."
-            )
-            return
-
         # Retrieves the selected processing
         processing = st.session_state[f"{self.page.ID}_{self.ID}_select_box"]
 

@@ -169,7 +169,6 @@ class RankingFeedback:
 
             # Step
             self.step = "gradient_estimation"
-            self.counter += 1
 
     @torch.no_grad()
     def adjust_generated_images(self, generated_images: List[Image.Image]) -> List[Image.Image]:

@@ -7,11 +7,7 @@ Purpose:
 """
 
 # IMPORT: utils
-from typing import *
 import streamlit as st
-
-import torch
-from PIL import Image
 
 # IMPORT: project
 from src.frontend.pages import Page
@@ -44,6 +40,10 @@ class ImageGeneration(Component):
         if "latents" not in self.session_state:
             self.session_state["latents"] = None
 
+        # Creates the list of parameters used during the image generation
+        if "generation_args" not in self.session_state:
+            self.session_state["generation_args"]: dict = None
+
         # ----- Components ----- #
         # Row n°1
         Prompt(page=self.page, parent=self.parent)  # allows to specify the prompt/negative prompt
@@ -68,11 +68,6 @@ class Prompt(Component):
         """
         super(Prompt, self).__init__(page, parent, component_id="prompt")
 
-        # ----- Session state ----- #
-        # Creates the prompt for the generation
-        if "prompt" not in self.session_state:
-            self.session_state["prompt"] = ""
-
         # ----- Components ----- #
         with self.parent.expander(label="", expanded=True):
             # Row n°1
@@ -80,17 +75,16 @@ class Prompt(Component):
 
             # Creates the text_area allowing to specify the prompt
             col1.text_area(
-                key=f"{self.page.ID}_{self.ID}_prompt",
+                key=f"{self.page.ID}_{self.ID}",
                 label="text_area", label_visibility="collapsed",
-                value=self.session_state["prompt"],
+                value="",
                 placeholder="Here, you have to write the prompt",
-                height=125,
-                on_change=self.on_change
+                height=125
             )
 
             # Creates the text_area allowing to specify the negative prompt
             col2.text_area(
-                key=f"{self.page.ID}_{self.ID}_negative_prompt",
+                key=f"{self.page.ID}_{self.ID}_negative",
                 label="text_area", label_visibility="collapsed",
                 value="monochrome, lowres, bad anatomy, worst quality, low quality",
                 placeholder="Here, you have to write the negative prompt",
@@ -100,18 +94,15 @@ class Prompt(Component):
             # Row n°2
             # Creates the button allowing to improve the prompt
             st.button(
+                key=f"{self.page.ID}_{self.ID}_button",
                 label="Improve the prompt",
                 on_click=self.on_click,
                 use_container_width=True
             )
 
-    def on_change(self):
-        # Assigns the value of the text_area to the prompt
-        self.session_state["prompt"] = st.session_state[f"{self.page.ID}_{self.ID}_prompt"]
-
     def on_click(self):
         # If the text_area containing the prompt to improve is empty
-        if st.session_state[f"{self.page.ID}_{self.ID}_prompt"] == "":
+        if st.session_state[f"{self.page.ID}_{self.ID}"] == "":
             st.sidebar.warning(
                 "WARNING: you need to provide a prompt before trying to improve it."
             )
@@ -120,11 +111,11 @@ class Prompt(Component):
         # Improves the prompt
         st.session_state.backend.check_promptist()
         prompt = st.session_state.backend.promptist(
-            prompt=st.session_state[f"{self.page.ID}_{self.ID}_prompt"]
+            prompt=st.session_state[f"{self.page.ID}_{self.ID}"]
         )
 
         # Updates the content of the text area
-        self.session_state["prompt"] = prompt
+        st.session_state[f"{self.page.ID}_{self.ID}"] = prompt
 
 
 class ImageGenerator(Component):
@@ -157,16 +148,16 @@ class ImageGenerator(Component):
 
     def on_click(self):
         # If the prompt is empty
-        if self.session_state["prompt"] == "":
+        if st.session_state[f"{self.page.ID}_prompt"] == "":
             st.sidebar.warning(
                 "WARNING: you need to provide a prompt before trying to generate an image."
             )
             return
 
-        # Retrieves the parameters needed to generate an image
+        # Retrieves the parameters needed to generate images
         args = {
-            "prompt": self.session_state["prompt"],
-            "negative_prompt": st.session_state[f"{self.page.ID}_prompt_negative_prompt"],
+            "prompt": st.session_state[f"{self.page.ID}_prompt"],
+            "negative_prompt": st.session_state[f"{self.page.ID}_prompt_negative"],
             "num_images": st.session_state[f"{self.page.ID}_hyperparameters_num_images"],
             "width": st.session_state[f"{self.page.ID}_hyperparameters_width"],
             "height": st.session_state[f"{self.page.ID}_hyperparameters_height"],
@@ -186,22 +177,29 @@ class ImageGenerator(Component):
         else:
             # Retrieves the uploaded masks and their corresponding (processing, weight)
             input_masks, controlnet_ids, weights = list(), list(), list()
-            for idx in range(len(self.session_state["images"])):
+            for image in self.session_state["images"]:
                 # If an image has been uploaded without providing the processing used
-                if self.session_state["images"][idx].processing == "":
+                if image.processing == "":
+                    st.sidebar.warning(
+                        "WARNING: you need to specify the processing used for each "
+                        "uploaded ControlNet mask"
+                    )
                     return
 
-                input_masks.append(self.session_state["images"][idx].image)
-                controlnet_ids.append(self.session_state["images"][idx].processing)
-                weights.append(self.session_state["images"][idx].weight)
+                input_masks.append(image.image)
+                controlnet_ids.append(image.processing)
+                weights.append(image.weight)
+
+            # Adds the new parameters to the previous ones
+            args = {**args, "images": input_masks, "weights": weights}
 
             # Generates images using ControlNet + StableDiffusion
             st.session_state.backend.check_controlnet(controlnet_ids=controlnet_ids)
-            latents, generated_images = st.session_state.backend.controlnet(
-                images=input_masks,
-                weights=weights,
-                **args
-            )
+            latents, generated_images = st.session_state.backend.controlnet(**args)
+
+        # Stores the parameters used to generate images
+        del args["num_images"]
+        self.session_state["generation_args"] = args
 
         # Resets the ranking feedback
         st.session_state.backend.reset_ranking_feedback()
@@ -238,14 +236,14 @@ class HyperParameters(Component):
             col1.slider(
                 key=f"{self.page.ID}_{self.ID}_num_images",
                 label="Number of images to generate",
-                min_value=0, max_value=10, value=1, step=1,
-            )
+                min_value=0, max_value=25, value=1, step=1,
+            )  # Creates the object to select the number of images to generate
 
             col2.slider(
                 key=f"{self.page.ID}_{self.ID}_seed",
                 label="Seed of the randomness (random if -1)",
                 min_value=-1, max_value=None, value=-1, step=1,
-            )
+            )  # Creates the object to select the seed of the randomness
 
             # Row n°2
             col1, col2 = st.columns([0.5, 0.5])
@@ -254,13 +252,13 @@ class HyperParameters(Component):
                 key=f"{self.page.ID}_{self.ID}_width",
                 label="Width of the image to generate",
                 min_value=0, max_value=1024, value=512, step=8,
-            )
+            )  # Creates the object to select the width of the image to generate
 
             col2.slider(
                 key=f"{self.page.ID}_{self.ID}_height",
                 label="Height of the image to generate",
                 min_value=0, max_value=1024, value=512, step=8,
-            )
+            )  # Creates the object to select the height of the image to generate
 
             # Row n°3
             col1, col2 = st.columns([0.5, 0.5])
@@ -269,10 +267,10 @@ class HyperParameters(Component):
                 key=f"{self.page.ID}_{self.ID}_guidance_scale",
                 label="Guidance scale of the generation",
                 min_value=0.0, max_value=21.0, value=7.5, step=0.1,
-            )
+            )  # Creates the object to select the guidance scale of the generation
 
             col2.slider(
                 key=f"{self.page.ID}_{self.ID}_num_steps",
                 label="Number of denoising steps",
-                min_value=0, max_value=100, value=20, step=1,
-            )
+                min_value=0, max_value=100, value=30, step=1,
+            )  # Creates the object to select the number of denoising step of the generation
