@@ -11,7 +11,7 @@ import streamlit as st
 
 # IMPORT: project
 from src.frontend.pages import Page
-from .sub_pages import ControlNetSelector, Prompts, HyperParameters, ImageGeneration
+from .sub_pages import ControlNet, ImageGeneration, FeedbackPage
 
 
 class ImageGenerationPage(Page):
@@ -22,16 +22,13 @@ class ImageGenerationPage(Page):
         super(ImageGenerationPage, self).__init__(parent, page_id="image_generation")
 
         # ----- Components ----- #
-        tabs = self.parent.tabs(["ControlNet", "Prompt", "Hyper-parameters", "Generation"])
+        tabs = self.parent.tabs(["ControlNet", "Generation", "Feedback"])
 
         # Instantiates the sub-page allowing to upload ControlNet inputs
-        ControlNetSelector(page=self, parent=tabs[0])
-
-        # Instantiates the sub-page allowing to specify the prompt/negative prompt
-        Prompts(page=self, parent=tabs[1])
-
-        # Instantiates the sub-page allowing to adjust the hyperparameters
-        HyperParameters(page=self, parent=tabs[2])
+        ControlNet(page=self, parent=tabs[0])
 
         # Instantiates the sub-page allowing to generate images
-        ImageGeneration(page=self, parent=tabs[3])
+        ImageGeneration(page=self, parent=tabs[1])
+
+        # Instantiates the sub-page allowing to give its feedback
+        FeedbackPage(page=self, parent=tabs[2])

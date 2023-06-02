@@ -32,7 +32,6 @@ class App:
         # ----- Session state ----- #
         # Instantiates the backend of the application
         if "backend" not in st.session_state:
-            print("here")
             st.session_state.backend = Backend()
 
         # ----- Components ----- #

@@ -84,15 +84,15 @@ class ControlNetStableDiffusion:
         prompt: str,
         images: List[torch.FloatTensor],
         negative_prompt: str = "",
+        num_images: int = 1,
         width: int = 512,
         height: int = 512,
         num_steps: int = 50,
         guidance_scale: float = 7.5,
-        latents: torch.Tensor = None,
         weights: List[float] = None,
-        num_images: int = 1,
-        seed: int = 0
-    ) -> List[Image.Image]:
+        latents: torch.Tensor = None,
+        seed: int = None
+    ) -> Tuple[torch.Tensor, List[Image.Image]]:
         """
         Generates images.
 
@@ -112,17 +112,19 @@ class ControlNetStableDiffusion:
                 number of denoising steps
             guidance_scale: int
                 strength of the prompt during the generation
-            latents: torch.Tensor
-                random noise from which to start the generation procedure
             weights: List[float]
                 weight of each ControlNet
+            latents: torch.Tensor
+                random noise from which to start the generation
+            seed: int
+                random seed to use during the generation
             num_images: int
                 number of images to generate
-            seed: int
-                random seed to use during the generation procedure
 
         Returns
         ----------
+            torch.FloatTensor
+                latents from which the image generation has started
             List[Image.Image]
                 generated images
         """
@@ -135,17 +137,32 @@ class ControlNetStableDiffusion:
         if weights is None:
             weights = [1.0] * len(images)
 
+        # Creates the random generator and the latents from which to start the image generation
+        generator = None if seed is None else torch.Generator(device="cpu").manual_seed(seed)
+        if latents is None:
+            latents: torch.Tensor = torch.randn(
+                size=(
+                    num_images,
+                    self._pipeline.unet.config.in_channels,
+                    height // self._pipeline.vae_scale_factor,
+                    width // self._pipeline.vae_scale_factor
+                ),
+                generator=generator
+            )
+
         # Generates images
-        return self._pipeline(
+        generated_images = self._pipeline(
             prompt=prompt,
-            negative_prompt=negative_prompt,
             image=images,
+            negative_prompt=negative_prompt,
+            num_images_per_prompt=num_images,
             width=width,
             height=height,
             num_inference_steps=num_steps,
             guidance_scale=guidance_scale,
-            latents=latents,
-            num_images_per_prompt=num_images,
             controlnet_conditioning_scale=weights,
-            generator=torch.Generator(device="cpu").manual_seed(seed)
+            latents=latents.type(torch.float16),
+            generator=generator
         ).images
+
+        return latents, generated_images

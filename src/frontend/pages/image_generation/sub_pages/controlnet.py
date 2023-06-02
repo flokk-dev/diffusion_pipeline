@@ -16,7 +16,7 @@ from src.frontend.components import Component, ImageUploader
 from src.backend.image import Images, Mask
 
 
-class ControlNetSelector(Component):
+class ControlNet(Component):
     """ Represents the sub-page allowing to upload the ControlNet masks. """
 
     def __init__(self, page: Page, parent: st._DeltaGenerator):
@@ -30,8 +30,10 @@ class ControlNetSelector(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(ControlNetSelector, self).__init__(page, parent, component_id="controlnet_selector")
-        self.parent.info("Here, you can upload some masks that will then guide the generation using ControlNet.")
+        super(ControlNet, self).__init__(page, parent, component_id="controlnet_selector")
+        self.parent.info(
+            "Here, you can upload ControlNet inputs in order to guide the generation"
+        )
 
         # ----- Session state ----- #
         # Creates the list of ControlNet masks
@@ -45,8 +47,8 @@ class ControlNetSelector(Component):
         # Row n°2
         cols = self.parent.columns((0.5, 0.5))
 
-        ImageUploader(page=self.page, parent=cols[0])  # allowing to upload images
-        MaskRanker(page=self.page, parent=cols[1])  # allowing to rank ControlNet masks
+        ImageUploader(page=self.page, parent=cols[0])  # allows to upload images
+        MaskRanker(page=self.page, parent=cols[1])  # allows to rank ControlNet masks
 
 
 class MaskDisplayer(Component):
@@ -145,17 +147,26 @@ class MaskRanker(Component):
 
     def on_click(self):
         # If no image has been loaded
-        if len(self.session_state["images"]) == 0:
+        if len(self.session_state["images"]) <= 1:
+            st.sidebar.warning(
+                "WARNING: you need to provide at least 2 masks before ranking them."
+            )
             return
 
         # If no rank has been entered
         ranking = st.session_state[f"{self.page.ID}_{self.ID}_text_input"]
-        if len(st.session_state[f"{self.page.ID}_{self.ID}_text_input"]) == 0:
+        if len(ranking) == 0:
+            st.sidebar.warning(
+                "WARNING: you need to provide a ranking before trying to rank the masks."
+            )
             return
 
         # If the provided ranking isn't conform
         ranking = [int(idx)-1 for idx in ranking]
         if sum(ranking) != sum(range(len(self.session_state["images"]))):
+            st.sidebar.warning(
+                "WARNING: there is something wrong with the ranking you provided."
+            )
             return
 
         # Applies the ranking on the in memory images

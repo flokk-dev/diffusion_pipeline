@@ -7,11 +7,11 @@ Purpose:
 """
 
 # IMPORT: utils
+from typing import *
 import streamlit as st
-import random
 
-# IMPORT: data processing
-import numpy as np
+import torch
+from PIL import Image
 
 # IMPORT: project
 from src.frontend.pages import Page
@@ -19,11 +19,11 @@ from src.frontend.components.component import Component
 
 
 class ImageGeneration(Component):
-    """ Represents the sub-page allowing to generate images. """
+    """ Represents the sub-page allowing to adjust the diffusion parameters and generate images. """
 
     def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes the sub-page allowing to generate images.
+        Initializes the sub-page allowing to adjust the diffusion parameters and generate images.
 
         Parameters
         ----------
@@ -33,34 +33,31 @@ class ImageGeneration(Component):
                 parent of the component
         """
         super(ImageGeneration, self).__init__(page, parent, component_id="image_generation")
-        self.parent.info("Here, you can generate images depending on the choices you maid before.")
+        self.parent.info("Here, you can adjust the diffusion parameters and generate images")
 
         # ----- Session state ----- #
         # Creates the list of generated images
         if "generated_images" not in self.session_state:
             self.session_state["generated_images"] = list()
 
+        # Creates the list of latents from which the image generation has started
+        if "latents" not in self.session_state:
+            self.session_state["latents"] = None
+
         # ----- Components ----- #
         # Row n°1
-        if len(self.session_state["generated_images"]) > 0:
-            ImageDisplayer(page=self.page, parent=self.parent)  # displays generated images
+        Prompt(page=self.page, parent=self.parent)  # allows to specify the prompt/negative prompt
 
         # Row n°2
-        if len(self.session_state["generated_images"]) > 1:
-            cols = self.parent.columns([0.5, 0.5])
-
-            ImageGenerator(page=self.page, parent=cols[0])  # launches the generation
-            RankingFeedback(page=self.page, parent=cols[1])  # allows to improve results
-        else:
-            ImageGenerator(page=self.page, parent=self.parent)  # launches the generation
+        ImageGenerator(page=self.page, parent=self.parent)  # allows to set up/launch the generation
 
 
-class ImageDisplayer(Component):
-    """ Represents the components that displays the generated images. """
+class Prompt(Component):
+    """ Represents the component allowing to specify the prompt and the negative prompt. """
 
     def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes the components that displays the generated images.
+        Initializes the component where to specify the prompt.
 
         Parameters
         ----------
@@ -69,37 +66,73 @@ class ImageDisplayer(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(ImageDisplayer, self).__init__(page, parent, component_id="image_displayer")
+        super(Prompt, self).__init__(page, parent, component_id="prompt")
+
+        # ----- Session state ----- #
+        # Creates the prompt for the generation
+        if "prompt" not in self.session_state:
+            self.session_state["prompt"] = ""
 
         # ----- Components ----- #
-        # Checks how much images to display on each row
-        modulo = len(self.session_state["generated_images"])
-        if modulo > 3:
-            modulo = 3
-
         with self.parent.expander(label="", expanded=True):
-            # If there should be 1 image per row, then creates 1 centered container
-            if modulo == 1:
-                cols = st.columns([1/4, 1/2, 1/4])[1:-1]
-            # If there should be 2 images per row, then creates 2 centered containers
-            elif modulo == 2:
-                cols = st.columns([1/6, 1/3, 1/3, 1/6])[1:-1]
-            # If there should be 3 images per row, then creates 3 containers
-            else:
-                cols = st.columns([1/modulo, 1/modulo, 1/modulo])
+            # Row n°1
+            col1, col2 = st.columns([0.5, 0.5])
 
-            # For each generated image
-            for idx, image in enumerate(self.session_state["generated_images"]):
-                # Display the generated image in the wright column
-                cols[idx % modulo].image(image=image, use_column_width=True)
+            # Creates the text_area allowing to specify the prompt
+            col1.text_area(
+                key=f"{self.page.ID}_{self.ID}_prompt",
+                label="text_area", label_visibility="collapsed",
+                value=self.session_state["prompt"],
+                placeholder="Here, you have to write the prompt",
+                height=125,
+                on_change=self.on_change
+            )
+
+            # Creates the text_area allowing to specify the negative prompt
+            col2.text_area(
+                key=f"{self.page.ID}_{self.ID}_negative_prompt",
+                label="text_area", label_visibility="collapsed",
+                value="monochrome, lowres, bad anatomy, worst quality, low quality",
+                placeholder="Here, you have to write the negative prompt",
+                height=125
+            )
+
+            # Row n°2
+            # Creates the button allowing to improve the prompt
+            st.button(
+                label="Improve the prompt",
+                on_click=self.on_click,
+                use_container_width=True
+            )
+
+    def on_change(self):
+        # Assigns the value of the text_area to the prompt
+        self.session_state["prompt"] = st.session_state[f"{self.page.ID}_{self.ID}_prompt"]
+
+    def on_click(self):
+        # If the text_area containing the prompt to improve is empty
+        if st.session_state[f"{self.page.ID}_{self.ID}_prompt"] == "":
+            st.sidebar.warning(
+                "WARNING: you need to provide a prompt before trying to improve it."
+            )
+            return
+
+        # Improves the prompt
+        st.session_state.backend.check_promptist()
+        prompt = st.session_state.backend.promptist(
+            prompt=st.session_state[f"{self.page.ID}_{self.ID}_prompt"]
+        )
+
+        # Updates the content of the text area
+        self.session_state["prompt"] = prompt
 
 
 class ImageGenerator(Component):
-    """ Represents the component allowing to launch the generation. """
+    """ Represents the component allowing to generate images. """
 
     def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes the component allowing to launch the generation.
+        Initializes the component allowing to generate images.
 
         Parameters
         ----------
@@ -112,16 +145,12 @@ class ImageGenerator(Component):
 
         # ----- Components ----- #
         with self.parent.form(key=f"{self.page.ID}_{self.ID}_form"):
-            # Creates a text_area allowing to specify a LoRA
-            st.text_input(
-                key=f"{self.page.ID}_{self.ID}_text_input",
-                label="LoRA", label_visibility="collapsed",
-                placeholder="Here, you can specify a LoRA ID"
-            )
+            # Creates the hyperparameters allowing to adjust the generation
+            HyperParameters(page=self.page, parent=st)
 
             # Creates the button allowing to generate an image
             st.form_submit_button(
-                label="Generate image",
+                label="Generate images",
                 on_click=self.on_click,
                 use_container_width=True
             )
@@ -129,27 +158,30 @@ class ImageGenerator(Component):
     def on_click(self):
         # If the prompt is empty
         if self.session_state["prompt"] == "":
+            st.sidebar.warning(
+                "WARNING: you need to provide a prompt before trying to generate an image."
+            )
             return
 
         # Retrieves the parameters needed to generate an image
         args = {
             "prompt": self.session_state["prompt"],
-            "negative_prompt": self.session_state["negative_prompt"],
-            "width": int(st.session_state[f"{self.page.ID}_width"]),
-            "height": int(st.session_state[f"{self.page.ID}_height"]),
-            "num_steps": st.session_state[f"{self.page.ID}_num_steps"],
-            "guidance_scale": st.session_state[f"{self.page.ID}_guidance_scale"],
-            "num_images": int(st.session_state[f"{self.page.ID}_num_images"]),
-            "seed": random.randint(0, 1000)
-            if st.session_state[f"{self.page.ID}_num_images"] == "-1"
-            else int(st.session_state[f"{self.page.ID}_num_images"])
+            "negative_prompt": st.session_state[f"{self.page.ID}_prompt_negative_prompt"],
+            "num_images": st.session_state[f"{self.page.ID}_hyperparameters_num_images"],
+            "width": st.session_state[f"{self.page.ID}_hyperparameters_width"],
+            "height": st.session_state[f"{self.page.ID}_hyperparameters_height"],
+            "num_steps": st.session_state[f"{self.page.ID}_hyperparameters_num_steps"],
+            "guidance_scale": st.session_state[f"{self.page.ID}_hyperparameters_guidance_scale"],
+            "seed": None
+            if st.session_state[f"{self.page.ID}_hyperparameters_seed"] == -1
+            else st.session_state[f"{self.page.ID}_hyperparameters_seed"]
         }
 
         # If no mask has been uploaded
         if len(self.session_state["images"]) == 0:
             # Generates images using only StableDiffusion
             st.session_state.backend.check_stable_diffusion()
-            generated_images = st.session_state.backend.stable_diffusion(**args)
+            latents, generated_images = st.session_state.backend.stable_diffusion(**args)
 
         else:
             # Retrieves the uploaded masks and their corresponding (processing, weight)
@@ -165,22 +197,28 @@ class ImageGenerator(Component):
 
             # Generates images using ControlNet + StableDiffusion
             st.session_state.backend.check_controlnet(controlnet_ids=controlnet_ids)
-            generated_images = st.session_state.backend.controlnet(
+            latents, generated_images = st.session_state.backend.controlnet(
                 images=input_masks,
                 weights=weights,
                 **args
             )
 
+        # Resets the ranking feedback
+        st.session_state.backend.reset_ranking_feedback()
+
         # Updates the in memory generated images
-        self.session_state["generated_images"] = [np.array(image) for image in generated_images]
+        self.session_state["generated_images"] = generated_images
+
+        # Updates the in memory latents
+        self.session_state["latents"] = latents
 
 
-class RankingFeedback(Component):
-    """ Represents the component allowing to improve the generation using ranking feedback. """
+class HyperParameters(Component):
+    """ Represents the sub-page allowing to adjust the hyperparameters. """
 
     def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes the component allowing to improve the generation using ranking feedback.
+        Initializes the sub-page allowing to adjust the hyperparameters.
 
         Parameters
         ----------
@@ -189,23 +227,52 @@ class RankingFeedback(Component):
             parent: st._DeltaGenerator
                 parent of the component
         """
-        super(RankingFeedback, self).__init__(page, parent, component_id="ranking_feedback")
+        super(HyperParameters, self).__init__(page, parent, component_id="hyperparameters")
 
         # ----- Components ----- #
-        with self.parent.form(key=f"{self.page.ID}_{self.ID}_form"):
-            # Creates the button allowing to generate an image
-            st.text_input(
-                key=f"{self.page.ID}_{self.ID}_text_input",
-                label="LoRA", label_visibility="collapsed",
-                placeholder="Here, you can give your feedback by ranking the images"
+        with self.parent.expander(label="Hyperparameters", expanded=False):
+            # Row n°1
+            st.markdown("---")
+            col1, col2 = st.columns([0.5, 0.5])
+
+            col1.slider(
+                key=f"{self.page.ID}_{self.ID}_num_images",
+                label="Number of images to generate",
+                min_value=0, max_value=10, value=1, step=1,
             )
 
-            # Creates the button allowing to generate an image
-            st.form_submit_button(
-                label="Give feedback",
-                on_click=self.on_click,
-                use_container_width=True
+            col2.slider(
+                key=f"{self.page.ID}_{self.ID}_seed",
+                label="Seed of the randomness (random if -1)",
+                min_value=-1, max_value=None, value=-1, step=1,
             )
 
-    def on_click(self):
-        pass
+            # Row n°2
+            col1, col2 = st.columns([0.5, 0.5])
+
+            col1.slider(
+                key=f"{self.page.ID}_{self.ID}_width",
+                label="Width of the image to generate",
+                min_value=0, max_value=1024, value=512, step=8,
+            )
+
+            col2.slider(
+                key=f"{self.page.ID}_{self.ID}_height",
+                label="Height of the image to generate",
+                min_value=0, max_value=1024, value=512, step=8,
+            )
+
+            # Row n°3
+            col1, col2 = st.columns([0.5, 0.5])
+
+            col1.slider(
+                key=f"{self.page.ID}_{self.ID}_guidance_scale",
+                label="Guidance scale of the generation",
+                min_value=0.0, max_value=21.0, value=7.5, step=0.1,
+            )
+
+            col2.slider(
+                key=f"{self.page.ID}_{self.ID}_num_steps",
+                label="Number of denoising steps",
+                min_value=0, max_value=100, value=20, step=1,
+            )

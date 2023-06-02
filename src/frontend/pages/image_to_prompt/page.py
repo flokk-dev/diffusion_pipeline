@@ -17,9 +17,9 @@ from src.backend.image import Images, ImageToDescribe
 
 
 class ImageToPromptPage(Page):
-    """ Represents the page allowing transform images into prompts. """
+    """ Represents the page allowing to generate prompts from images. """
     def __init__(self, parent: st._DeltaGenerator):
-        """ Initializes the page allowing transform images into prompts. """
+        """ Initializes the page allowing to generate prompts from images. """
         super(ImageToPromptPage, self).__init__(parent, page_id="image_captioning")
 
         # ----- Session state ----- #
@@ -33,16 +33,16 @@ class ImageToPromptPage(Page):
 
         # ----- Components ----- #
         # Writes the purpose of the page
-        self.parent.info("This page allows you to transform images into prompts.")
+        self.parent.info("This page allows you to generate a prompt from an image")
 
         # Row n°1
         cols = self.parent.columns((0.5, 0.5))
 
         ImageCarousel(page=self, parent=cols[0])  # displays the uploaded images
-        ImageToPrompt(page=self, parent=cols[0])  # allowing to transform images into prompts
+        ImageToPrompt(page=self, parent=cols[0])  # allows to generate a prompt from an image
 
         # Row n°2
-        ImageUploader(page=self, parent=cols[1])  # allowing to upload images
+        ImageUploader(page=self, parent=cols[1])  # allows to upload images
 
 
 class ImageCarousel(Component):
@@ -85,10 +85,10 @@ class ImageCarousel(Component):
 
 
 class ImageToPrompt(Component):
-    """ Represents a component allowing to transform the image into a prompt. """
+    """ Represents a component allowing to generate a prompt from an image. """
     def __init__(self, page: Page, parent: st._DeltaGenerator):
         """
-        Initializes a component allowing to transform the image into a prompt.
+        Initializes a component allowing to generate a prompt from an image.
 
         Parameters
         ----------
@@ -100,7 +100,7 @@ class ImageToPrompt(Component):
         super(ImageToPrompt, self).__init__(page, parent, component_id="image_to_prompt")
 
         # ----- Components ----- #
-        with self.parent.form(key=f"{self.page.ID}_form"):
+        with self.parent.form(key=f"{self.page.ID}_{self.ID}_form"):
             # Creates the text_area in which to display the prompt
             st.text_area(
                 key=f"{self.page.ID}_{self.ID}_prompt",
@@ -117,8 +117,11 @@ class ImageToPrompt(Component):
             )
 
     def on_click(self):
-        # If no image has been loaded return
+        # If no image has been uploaded
         if len(self.session_state["images"]) == 0:
+            st.sidebar.warning(
+                "WARNING: to use the image to prompt component, you have to provide an image."
+            )
             return
 
         # Generates the prompt of the current image

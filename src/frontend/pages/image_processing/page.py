@@ -25,7 +25,7 @@ class ImageProcessingPage(Page):
         # ----- Session state ----- #
         # Creates the list of images to process
         if "images" not in self.session_state:
-            self.session_state["images"]: Images = Images(image_type=ImageToProcess)
+            self.session_state["images"]: Images = list()
 
         # Creates the idx indicating the current image
         if "image_idx" not in self.session_state:
@@ -33,7 +33,9 @@ class ImageProcessingPage(Page):
 
         # ----- Components ----- #
         # Writes the purpose of the page
-        self.parent.info("This tool allows you to process an image in order to create an input for a ControlNet.")
+        self.parent.info(
+            "This tool allows you to process an image in order to create a ControlNet input"
+        )
 
         # Instantiates the image carousel
         ImageCarousel(page=self, parent=self.parent)
@@ -42,7 +44,7 @@ class ImageProcessingPage(Page):
         cols = self.parent.columns((0.5, 0.5))
 
         ImageUploader(page=self, parent=cols[0])  # displays the uploaded images
-        ProcessingApplier(page=self, parent=cols[1])  # allowing to select and apply a processing
+        ProcessingApplier(page=self, parent=cols[1])  # allows to select and apply a processing
 
 
 class ImageCarousel(Component):
@@ -129,6 +131,9 @@ class ProcessingApplier(Component):
     def on_click(self):
         # If no image has been loaded return
         if len(self.session_state["images"]) == 0:
+            st.sidebar.warning(
+                "WARNING: you need to import an image before trying to process one."
+            )
             return
 
         # Retrieves the selected processing
@@ -136,6 +141,9 @@ class ProcessingApplier(Component):
 
         # If no process has been selected return
         if processing == "":
+            st.sidebar.warning(
+                "WARNING: you need to select a processing before trying to apply it."
+            )
             return
 
         # Runs the selected processing on the current image

@@ -1,4 +1,3 @@
-from .controlnet import ControlNetSelector
-from .prompt import Prompts
-from .hyperparameters import HyperParameters
+from .controlnet import ControlNet
 from .image_generation import ImageGeneration
+from .feedback import FeedbackPage

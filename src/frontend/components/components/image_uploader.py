@@ -11,18 +11,22 @@ from typing import *
 import streamlit as st
 
 # IMPORT: project
+from src.backend.image import Image
+
 from src.frontend.components.component import Component
 from src.frontend.pages import Page
 
 
 class ImageUploader(Component):
     """ Represents the component allowing to upload images. """
-    def __init__(self, page: Page, parent: st._DeltaGenerator):
+    def __init__(self, image_type: Image, page: Page, parent: st._DeltaGenerator):
         """
         Initializes the component allowing to upload images.
 
         Parameters
         ----------
+            image_type: Image
+                type of the images to instantiate
             page: Page
                 page containing the component
             parent: st._DeltaGenerator
@@ -33,8 +37,7 @@ class ImageUploader(Component):
         # ----- Components ----- #
         self.parent.file_uploader(
             key=f"{self.page.ID}_{self.ID}",
-            label="image uploader",
-            label_visibility="collapsed",
+            label="image uploader", label_visibility="collapsed",
             type=["jpg", "jpeg", "png"],
             accept_multiple_files=True,
             on_change=self.on_change
