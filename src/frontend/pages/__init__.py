@@ -1,7 +1,4 @@
-# Page
-from .page import Page
-
-# Pages
-from .image_processing import ImageProcessingPage
-from .image_to_prompt import ImageToPromptPage
-from .image_generation import ImageGenerationPage
+from .text2image import Text2ImagePage
+from .image2image import Image2ImagePage
+from .image2prompt import Image2PromptPage
+from .text2prompt import Text2PromptPage

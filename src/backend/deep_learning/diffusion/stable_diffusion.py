@@ -99,7 +99,7 @@ class StableDiffusion:
                     height // self._pipeline.vae_scale_factor,
                     width // self._pipeline.vae_scale_factor
                 ),
-                generator=generator
+                generator=None
             )
 
         # Generates images

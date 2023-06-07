@@ -45,7 +45,4 @@ class PidiNet(ImageProcessing):
                 processed image
         """
         # Runs the processing into the image
-        output_image: np.ndarray = self._processor(input_image=image, return_pil=False)
-
-        # Resizes the output image to its original shape
-        return self._resize(image=output_image, shape=image.shape)
+        return self._processor(input_image=image, return_pil=False)

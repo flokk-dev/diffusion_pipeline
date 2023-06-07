@@ -45,7 +45,4 @@ class Sam(ImageProcessing):
                 processed image
         """
         # Runs the processing into the image
-        output_image: np.ndarray = np.array(self._processor(image=image))
-
-        # Resizes the output image to its original shape
-        return self._resize(image=output_image, shape=image.shape)
+        return np.array(self._processor(image=image))

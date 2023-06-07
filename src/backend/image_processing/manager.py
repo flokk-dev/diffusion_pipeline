@@ -52,5 +52,8 @@ class ImageProcessingManager(Dict):
             np.ndarray
                 processed image
         """
+        if isinstance(self[processing_id], type):
+            self[processing_id] = self[processing_id]()
+
         # Runs the processing into the image
-        return self[processing_id]()(image=image)
+        return self[processing_id](image=image)

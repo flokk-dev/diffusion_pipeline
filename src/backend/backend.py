@@ -15,9 +15,8 @@ from PIL import Image
 # IMPORT: project
 from .image_processing import ImageProcessingManager
 
-from .deep_learning.prompt import ClipInterrogator, Promptist
+from .deep_learning import ClipInterrogator, Promptist, RankingFeedback
 from .deep_learning.diffusion import StableDiffusion, ControlNetStableDiffusion
-from .deep_learning.feedback import RankingFeedback
 
 
 class Backend:
