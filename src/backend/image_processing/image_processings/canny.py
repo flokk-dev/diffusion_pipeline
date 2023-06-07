@@ -29,7 +29,7 @@ class Canny(ImageProcessing):
         # Object allowing to process images
         self._processor: CannyDetector = CannyDetector()
 
-    def __call__(self, image: np.ndarray, thresholds: Tuple[int] = (100, 200)) -> np.ndarray:
+    def __call__(self, image: np.ndarray, thresholds: Tuple[int] = (0, 75)) -> np.ndarray:
         """
         Runs the processing into the image.
 
@@ -46,6 +46,7 @@ class Canny(ImageProcessing):
                 processed image
         """
         # Runs the processing into the image
+        print(thresholds)
         output_image: np.ndarray = self._processor(
             img=image,
             low_threshold=thresholds[0], high_threshold=thresholds[1]
