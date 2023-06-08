@@ -2,4 +2,4 @@
 from .component import Component
 
 # Components
-from .components import Prompts, Hyperparameters
+from .components import Hyperparameters, Prompts, RankingFeedback

@@ -36,16 +36,16 @@ class ImageProcessingManager(Dict):
         self["shuffle"]: ContentShuffle = ContentShuffle
         self["zoe"]: Zoe = Zoe
 
-    def __call__(self, processing_id: str, image: np.ndarray) -> np.ndarray:
+    def __call__(self, image: np.ndarray, processing_id: str) -> np.ndarray:
         """
         Runs the processing linked to the id into the image.
 
         Parameters
         ----------
-            processing_id: str
-                id of an image processing
             image: np.ndarray
                 image to process
+            processing_id: str
+                id of an image processing
 
         Returns
         ----------

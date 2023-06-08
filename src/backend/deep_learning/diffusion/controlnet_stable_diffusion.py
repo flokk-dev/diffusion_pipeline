@@ -29,7 +29,7 @@ class ControlNetStableDiffusion:
     """
     CONTROLNET_IDS = {
         "canny": "lllyasviel/sd-controlnet-canny",
-        "depth": "lllyasviel/sd-controlnet-depth",
+        "midas": "lllyasviel/sd-controlnet-depth",
         "hed": "lllyasviel/sd-controlnet-hed",
         "mlsd": "lllyasviel/sd-controlnet-mlsd",
         "normal": "lllyasviel/sd-controlnet-normal",

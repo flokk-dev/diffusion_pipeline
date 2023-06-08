@@ -9,10 +9,12 @@ Purpose:
 # IMPORT: utils
 from typing import *
 import gradio as gr
+
 import numpy as np
+import torch
 
 # IMPORT: project
-from src.frontend.component import Component, Prompts, Hyperparameters
+from src.frontend.component import Component, Prompts, Hyperparameters, RankingFeedback
 
 from src.backend.image_processing import ImageProcessingManager
 from src.backend.deep_learning.diffusion import ControlNetStableDiffusion
@@ -33,8 +35,91 @@ class ControlNetSubPage:
         # Creates the component allowing to adjust the hyperparameters
         self.hyperparameters = Hyperparameters(parent=self)
 
-        # Creates the component allowing to generate and display images
-        self.image_generation = ImageGeneration(parent=self)
+        # ----- Attributes ----- #
+        # Creates the object allowing to generate images
+        self.diffusion: type | ControlNetStableDiffusion = ControlNetStableDiffusion
+
+        # Creates the arguments of the diffusion
+        self.args: dict = None
+        self.latents: torch.Tensor = None
+
+        # ----- Components ----- #
+        with gr.Accordion(label="Generation", open=True):
+            # Creates the carousel containing the generated images
+            self.generated_images: gr.Gallery = gr.Gallery(label="Images").style(grid=3)
+
+            # Creates the button allowing to generate images
+            button: gr.Button = gr.Button("Generate new images").style(full_width=True)
+
+        # Creates the component allowing the user to give its feedback
+        self.ranking_feedback: RankingFeedback = RankingFeedback(parent=self)
+        button.click(
+            fn=self.on_click,
+            inputs=[
+                *self.controlnet.retrieve_info(),
+                *self.prompts.retrieve_info(),
+                *self.hyperparameters.retrieve_info()
+            ],
+            outputs=[
+                self.generated_images,
+                self.ranking_feedback.container,
+                self.ranking_feedback.row_1,
+                self.ranking_feedback.row_2,
+                self.ranking_feedback.row_3
+            ]
+        )
+
+    def on_click(
+            self,
+            mask_0: np.ndarray, processing_0: str, weight_0: float,
+            mask_1: np.ndarray, processing_1: str, weight_1: float,
+            mask_2: np.ndarray, processing_2: str, weight_2: float,
+            prompt: str,
+            negative_prompt: str = "",
+            num_images: int = 1,
+            width: int = 512,
+            height: int = 512,
+            num_steps: int = 50,
+            guidance_scale: float = 7.5,
+            seed: int = None
+    ):
+        # Aggregates the ControlNet elements together
+        masks: List[np.ndarray] = list()
+        controlnet_ids: List[str] = list()
+        weights: List[float] = list()
+
+        for mask, processing, weight in zip(
+                [mask_0, mask_1, mask_2],
+                [processing_0, processing_1, processing_2],
+                [weight_0, weight_1, weight_2]
+        ):
+            if isinstance(mask, np.ndarray):
+                masks.append(mask)
+                controlnet_ids.append(processing)
+                weights.append(weight)
+
+        # Instantiates the ControlNet pipeline if needed
+        if isinstance(self.diffusion, type) or controlnet_ids != self.diffusion.controlnet_ids:
+            self.diffusion = self.diffusion(controlnet_ids=controlnet_ids)
+
+        # Creates the dictionary of arguments
+        self.args = {
+            "images": masks,
+            "weights": weights,
+            "prompt": prompt,
+            "negative_prompt": negative_prompt,
+            "num_images": int(num_images) if num_images > 0 else 1,
+            "width": width,
+            "height": height,
+            "num_steps": num_steps,
+            "guidance_scale": guidance_scale,
+            "seed": seed if seed >= 0 else None,
+        }
+
+        self.latents, generated_images = self.diffusion(**self.args)
+        return generated_images, \
+            gr.update(open=True, visible=True), \
+            gr.update(visible=True), gr.update(visible=False), gr.update(visible=False)
 
 
 class ControlNet(Component):
@@ -103,86 +188,18 @@ class ControlNet(Component):
                     button = gr.Button("Process image")
                     button.click(
                         fn=self.on_click,
-                        inputs=[self.processing[idx], self.images[idx]],
+                        inputs=[self.images[idx], self.processing[idx]],
                         outputs=[self.masks[idx]]
                     )
 
-    def on_click(self, processing, image):
-        return self.image_processing_manager(processing, image)
+    def on_click(self, image, processing):
+        return self.image_processing_manager(image, processing)
 
+    def retrieve_info(self) -> List[Any]:
+        info: List[Any] = list()
+        for idx in range(len(self.images)):
+            info.append(self.masks[idx])
+            info.append(self.processing[idx])
+            info.append(self.weights[idx])
 
-class ImageGeneration(Component):
-    """ Represents the component allowing to generate and display images. """
-    def __init__(self, parent: Any):
-        """
-        Initializes the component allowing to generate and display images.
-
-        Parameters
-        ----------
-            parent: Any
-                parent of the component
-        """
-        super(ImageGeneration, self).__init__(parent=parent)
-
-        # ----- Attributes ----- #
-        # Creates the object allowing to generate images
-        self.diffusion = ControlNetStableDiffusion
-
-        # Creates the carousel containing the generated images
-        self.generated_images: gr.Gallery = gr.Gallery(label="Generated images").style(grid=4)
-
-        # Creates the button allowing to generate images
-        self.generation: gr.Button = gr.Button("Generate images").style(full_width=True)
-        self.generation.click(
-            fn=self.on_click,
-            inputs=[
-                # *self.parent.controlnet.retrieve_info(),
-                *self.parent.prompts.retrieve_info(),
-                *self.parent.hyperparameters.retrieve_info()
-            ],
-            outputs=[self.generated_images]
-        )
-
-    def on_click(
-            self,
-            prompt: str,
-            negative_prompt: str = "",
-            num_images: int = 1,
-            width: int = 512,
-            height: int = 512,
-            num_steps: int = 50,
-            guidance_scale: float = 7.5,
-            seed: int = None
-    ):
-        masks: List[gr.Image] = list()
-        weights: List[gr.Slider] = list()
-        processing: List[gr.Dropdown] = list()
-
-        for idx, mask in enumerate(self.parent.controlnet.masks):
-            print(self.parent.controlnet.images[idx].shape)
-            print(mask.shape)
-            if isinstance(mask, gr.Image):
-                masks.append(mask)
-                weights.append(self.parent.controlnet.weights[idx])
-                processing.append(self.parent.controlnet.processing[idx])
-
-        # If not instantiated or ControlNet ids have been modified
-        if isinstance(self.diffusion, type) or processing != self.diffusion.controlnet_ids:
-            self.diffusion = self.diffusion(controlnet_ids=processing)
-
-        args: Dict[Any] = {
-            "images": masks,
-            "weights": weights,
-            "prompt": prompt,
-            "negative_prompt": negative_prompt,
-            "num_images": int(num_images) if num_images > 0 else 1,
-            "width": width,
-            "height": height,
-            "num_steps": num_steps,
-            "guidance_scale": guidance_scale,
-            "seed": seed if seed >= 0 else None,
-        }
-
-        _, generated_images = self.diffusion(**args)
-
-        return generated_images
+        return info

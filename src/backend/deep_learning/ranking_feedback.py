@@ -115,13 +115,13 @@ class RankingFeedback:
         return self._latents
 
     @torch.no_grad()
-    def ranking_feedback(self, ranking: str, generated_images: List[Image.Image]):
+    def ranking_feedback(self, feedback: str, generated_images: List[Image.Image]):
         """
         Computes the ranking feedback (depends on the current step).
 
         Parameters
         ----------
-            ranking: str
+            feedback: str
                 ranking from the user
             generated_images: List[Image.Image]
                 images generated during the current step
@@ -129,7 +129,7 @@ class RankingFeedback:
         # Gradient estimation
         if self.step == "gradient_estimation":
             # Parse the ranking
-            ranked, unranked = self._parse_ranking(ranking)
+            ranked, unranked = self._parse_ranking(feedback)
             k = len(ranked)
 
             # Computes the update of the search direction
@@ -158,7 +158,7 @@ class RankingFeedback:
         # Line search
         elif self.step == "line_search":
             # Parse the ranking
-            best_latent_idx = int(ranking) - 1
+            best_latent_idx = int(feedback) - 1
 
             # If the index of the best latent is not the one of the current best image
             if best_latent_idx != len(self._latents) - 1:

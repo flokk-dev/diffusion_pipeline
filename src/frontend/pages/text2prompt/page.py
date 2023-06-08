@@ -20,7 +20,7 @@ class Text2PromptPage:
         # ----- Components ----- #
         with gr.Row():
             # Creates the component allowing to upload an image
-            text = gr.TextArea(label="Text", lines=3)
+            text = gr.TextArea(label="Text/Prompt", lines=3)
 
             # Creates the component allowing to display the prompt
             prompt = gr.TextArea(label="Prompt", lines=3)
@@ -28,7 +28,7 @@ class Text2PromptPage:
         # Creates the component allowing to describe the image
         self.converter = Promptist
 
-        self.button = gr.Button("Convert the text")
+        self.button = gr.Button("Convert the text/Improve the prompt")
         self.button.click(
             fn=self.on_click,
             inputs=[text],
