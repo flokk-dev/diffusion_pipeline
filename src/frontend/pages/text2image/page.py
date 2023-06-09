@@ -18,8 +18,8 @@ class Text2ImagePage:
     def __init__(self):
         """ Initializes the page allowing to process images. """
         # ----- Components ----- #
-        with gr.Tab("StableDiffusion"):
+        with gr.Tab("Diffusion"):
             StableDiffusionSubPage()
 
-        with gr.Tab("ControlNetStableDiffusion"):
+        with gr.Tab("Diffusion + ControlNet"):
             ControlNetSubPage()

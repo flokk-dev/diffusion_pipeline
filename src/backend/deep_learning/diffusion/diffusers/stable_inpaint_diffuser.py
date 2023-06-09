@@ -12,12 +12,16 @@ from PIL import Image
 
 # IMPORT: data processing
 import torch
+from torchvision.transforms import Compose, ToTensor, Resize
 
 # IMPORT: deep learning
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionInpaintPipeline
+
+# IMPORT: project
+from src.backend.deep_learning.diffusion import Diffuser
 
 
-class StableDiffusion:
+class StableInpaintDiffuser(Diffuser):
     """
     Represents an object allowing to generate images using only StableDiffusion.
 
@@ -27,28 +31,42 @@ class StableDiffusion:
             diffusion pipeline needed to generate images
     """
 
-    def __init__(self, path: str = "runwayml/stable-diffusion-v1-5"):
+    def __init__(self, pipeline_path: str = "runwayml/stable-diffusion-v1-5"):
         """
         Initializes an object allowing to generate images using only StableDiffusion.
 
         Parameters
         ----------
-            path: str
+            pipeline_path: str
                 path to the pretrained pipeline
         """
-        # ----- Attributes ----- #
-        # Pipeline allowing to generate images
-        self._pipeline: StableDiffusionPipeline = StableDiffusionPipeline.from_pretrained(
-            pretrained_model_name_or_path=path,
-            torch_dtype=torch.float16
-        )
+        super(StableInpaintDiffuser, self).__init__(pipeline_path=pipeline_path)
 
-        # Optimizes the use of the GPU's VRAM
-        self._pipeline.enable_model_cpu_offload()
+    def _load_pipeline(self, pipeline_path: str) -> StableDiffusionInpaintPipeline:
+        """
+        Loads the diffusion pipeline.
+
+        Parameters
+        ----------
+            pipeline_path: str
+                path to the pretrained pipeline
+
+        Returns
+        ----------
+            DiffusionPipeline
+                pretrained pipeline
+        """
+        return StableDiffusionInpaintPipeline.from_pretrained(
+            pretrained_model_name_or_path=pipeline_path,
+            torch_dtype=torch.float16,
+            safety_checker=None
+        )
 
     def __call__(
         self,
         prompt: str,
+        image: torch.Tensor,
+        mask: torch.Tensor,
         negative_prompt: str = "",
         num_images: int = 1,
         width: int = 512,
@@ -65,8 +83,14 @@ class StableDiffusion:
         ----------
             prompt: str
                 prompt describing the output image
+            image: torch.Tensor
+                image to modify
+            mask: torch.Tensor
+                mask indicating what to modify
             negative_prompt: str
                 prompt describing what to avoid in the output image
+            num_images: int
+                number of images to generate
             width: int
                 width of the output image
             height: int
@@ -79,8 +103,6 @@ class StableDiffusion:
                 random noise from which to start the generation
             seed: int
                 random seed to use during the generation
-            num_images: int
-                number of images to generate
 
         Returns
         ----------
@@ -89,22 +111,27 @@ class StableDiffusion:
             List[Image.Image]
                 generated images
         """
-        # Creates the random generator and the latents from which to start the image generation
+        # If the images are not tensors
+        processing: Compose = Compose([ToTensor(), Resize((height, width))])
+
+        if not isinstance(image, torch.FloatTensor):
+            image = processing(image).unsqueeze(0)
+
+        if not isinstance(mask, torch.FloatTensor):
+            mask = processing(mask)[0].unsqueeze(0).unsqueeze(0)
+
+        # Creates the object that controls the randomness
         generator = None if seed is None else torch.Generator(device="cpu").manual_seed(seed)
+
+        # Creates the latents from which the image generation will start
         if latents is None:
-            latents: torch.Tensor = torch.randn(
-                size=(
-                    num_images,
-                    self._pipeline.unet.config.in_channels,
-                    height // self._pipeline.vae_scale_factor,
-                    width // self._pipeline.vae_scale_factor
-                ),
-                generator=None
-            )
+            latents = self._latents_generator(num_images, width, height, generator)
 
         # Generates images
         generated_images = self._pipeline(
             prompt=prompt,
+            image=image,
+            mask_image=mask,
             negative_prompt=negative_prompt,
             num_images_per_prompt=num_images,
             width=width,

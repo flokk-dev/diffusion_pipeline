@@ -17,7 +17,7 @@ import torch
 from src.frontend.component import Component, Prompts, Hyperparameters, RankingFeedback
 
 from src.backend.image_processing import ImageProcessingManager
-from src.backend.deep_learning.diffusion import ControlNetStableDiffusion
+from src.backend.deep_learning.diffusion import ControlNetDiffuser
 
 
 class ControlNetSubPage:
@@ -37,7 +37,7 @@ class ControlNetSubPage:
 
         # ----- Attributes ----- #
         # Creates the object allowing to generate images
-        self.diffusion: type | ControlNetStableDiffusion = ControlNetStableDiffusion
+        self.diffusion: type | ControlNetDiffuser = ControlNetDiffuser
 
         # Creates the arguments of the diffusion
         self.args: dict = None

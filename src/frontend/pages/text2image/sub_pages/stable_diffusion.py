@@ -14,7 +14,7 @@ import torch
 
 # IMPORT: project
 from src.frontend.component import Prompts, Hyperparameters, RankingFeedback
-from src.backend.deep_learning.diffusion import StableDiffusion
+from src.backend.deep_learning.diffusion import StableDiffuser
 
 
 class StableDiffusionSubPage:
@@ -31,7 +31,7 @@ class StableDiffusionSubPage:
 
         # ----- Attributes ----- #
         # Creates the object allowing to generate images
-        self.diffusion: type | StableDiffusion = StableDiffusion
+        self.diffusion: type | StableDiffuser = StableDiffuser
 
         # Creates the arguments of the diffusion
         self.args: dict = None

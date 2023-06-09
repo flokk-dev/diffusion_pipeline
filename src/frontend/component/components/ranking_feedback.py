@@ -15,7 +15,7 @@ import torch
 
 # IMPORT: project
 from src.frontend.component import Component
-from src.backend.deep_learning import RankingFeedback as Algorithm
+from src.backend.feedback import RankingFeedback as Algorithm
 
 
 class RankingFeedback(Component):

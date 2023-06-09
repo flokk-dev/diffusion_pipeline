@@ -11,14 +11,20 @@ import gradio as gr
 
 # IMPORT: project
 from paths import FAVICON
-from src.frontend import Text2ImagePage, Image2ImagePage, Image2PromptPage, Text2PromptPage
+from src.frontend import \
+    Text2ImagePage, \
+    Image2ImagePage, \
+    Image2PromptPage, \
+    Text2PromptPage, \
+    ImageInpainting
 
 
 PAGES = {
     "Text2Image": Text2ImagePage,
     "Image2Image": Image2ImagePage,
     "Image2Prompt": Image2PromptPage,
-    "Text2Prompt": Text2PromptPage
+    "Text2Prompt": Text2PromptPage,
+    "ImageInpainting": ImageInpainting
 }
 
 with gr.Blocks() as demo:
