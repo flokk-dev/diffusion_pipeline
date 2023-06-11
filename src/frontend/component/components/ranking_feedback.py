@@ -46,6 +46,7 @@ class RankingFeedback(Component):
             # If the algorithm hasn't been instantiated yet
             with self.row_1:
                 # Creates the text area allowing to specify the best image
+                # Creates the text area allowing to specify the best image
                 start_image = gr.Number(
                     label="Index of the best image",
                     interactive=True
@@ -185,7 +186,7 @@ class RankingFeedback(Component):
                 latents from which to start the generation
         """
         # Generates images using the diffusion object
-        return self.parent.diffusion(**{
+        return self.parent.diffuser(**{
             **self.parent.args,
             **{"num_images": latents.shape[0], "latents": latents}
         })

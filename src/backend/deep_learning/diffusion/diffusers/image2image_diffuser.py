@@ -12,52 +12,57 @@ from PIL import Image
 
 # IMPORT: data processing
 import torch
-from torchvision.transforms import Compose, ToTensor, Resize
+from torchvision.transforms import ToTensor
 
 # IMPORT: deep learning
-from diffusers import StableDiffusionInpaintPipeline
+from diffusers import StableDiffusionImg2ImgPipeline
 
 # IMPORT: project
 from src.backend.deep_learning.diffusion import Diffuser
 
 
-class StableInpaintDiffuser(Diffuser):
+class Image2ImageDiffuser(Diffuser):
     """
-    Represents an object allowing to generate images using only StableDiffusion.
+    Represents an object allowing to generate images using image to image (StableDiffusion).
 
     Attributes
     ----------
         _pipeline: StableDiffusionPipeline
             diffusion pipeline needed to generate images
     """
+    PIPELINES = {
+        "StableDiffusion_v1.5": "runwayml/stable-diffusion-v1-5",
+        "StableDiffusion_v2.0": "stabilityai/stable-diffusion-2",
+        "DreamLike_v1.0": "dreamlike-art/dreamlike-photoreal-1.0",
+        "DreamLike_v2.0": "dreamlike-art/dreamlike-photoreal-2.0",
+        "OpenJourney_v4": "prompthero/openjourney-v4",
+        "Deliberate_v1": "XpucT/Deliberate",
+        "RealisticVision_v2.0": "SG161222/Realistic_Vision_V2.0",
+        "Anything_v4": "andite/anything-v4.0"
+    }
 
-    def __init__(self, pipeline_path: str = "runwayml/stable-diffusion-v1-5"):
+    def __init__(self, pipeline_path: str):
         """
-        Initializes an object allowing to generate images using only StableDiffusion.
+        Initializes an object allowing to generate images using image to image (StableDiffusion).
 
         Parameters
         ----------
             pipeline_path: str
                 path to the pretrained pipeline
         """
-        super(StableInpaintDiffuser, self).__init__(pipeline_path=pipeline_path)
+        super(Image2ImageDiffuser, self).__init__(pipeline_path=pipeline_path)
 
-    def _load_pipeline(self, pipeline_path: str) -> StableDiffusionInpaintPipeline:
+    def _load_pipeline(self) -> StableDiffusionImg2ImgPipeline:
         """
         Loads the diffusion pipeline.
-
-        Parameters
-        ----------
-            pipeline_path: str
-                path to the pretrained pipeline
 
         Returns
         ----------
             DiffusionPipeline
                 pretrained pipeline
         """
-        return StableDiffusionInpaintPipeline.from_pretrained(
-            pretrained_model_name_or_path=pipeline_path,
+        return StableDiffusionImg2ImgPipeline.from_pretrained(
+            pretrained_model_name_or_path=self.PIPELINES[self._pipeline_path],
             torch_dtype=torch.float16,
             safety_checker=None
         )
@@ -66,16 +71,13 @@ class StableInpaintDiffuser(Diffuser):
         self,
         prompt: str,
         image: torch.Tensor,
-        mask: torch.Tensor,
+        strength: float = 0.8,
         negative_prompt: str = "",
         num_images: int = 1,
-        width: int = 512,
-        height: int = 512,
         num_steps: int = 50,
         guidance_scale: float = 7.5,
-        latents: torch.Tensor = None,
         seed: int = None
-    ) -> Tuple[torch.Tensor, List[Image.Image]]:
+    ) -> List[Image.Image]:
         """
         Generates images.
 
@@ -84,62 +86,40 @@ class StableInpaintDiffuser(Diffuser):
             prompt: str
                 prompt describing the output image
             image: torch.Tensor
-                image to modify
-            mask: torch.Tensor
-                mask indicating what to modify
+                image on which the generation will be based
+            strength: float
+                strength of the starting image
             negative_prompt: str
                 prompt describing what to avoid in the output image
             num_images: int
                 number of images to generate
-            width: int
-                width of the output image
-            height: int
-                height of the output image
             num_steps: int
                 number of denoising steps
-            guidance_scale: int
+            guidance_scale: float
                 strength of the prompt during the generation
-            latents: torch.Tensor
-                random noise from which to start the generation
             seed: int
                 random seed to use during the generation
 
         Returns
         ----------
-            torch.FloatTensor
-                latents from which the image generation has started
             List[Image.Image]
                 generated images
         """
         # If the images are not tensors
-        processing: Compose = Compose([ToTensor(), Resize((height, width))])
-
         if not isinstance(image, torch.FloatTensor):
-            image = processing(image).unsqueeze(0)
-
-        if not isinstance(mask, torch.FloatTensor):
-            mask = processing(mask)[0].unsqueeze(0).unsqueeze(0)
+            image = ToTensor()(image).unsqueeze(0)
 
         # Creates the object that controls the randomness
         generator = None if seed is None else torch.Generator(device="cpu").manual_seed(seed)
 
-        # Creates the latents from which the image generation will start
-        if latents is None:
-            latents = self._latents_generator(num_images, width, height, generator)
-
         # Generates images
-        generated_images = self._pipeline(
+        return self._pipeline(
             prompt=prompt,
             image=image,
-            mask_image=mask,
+            strength=1.0 - strength,
             negative_prompt=negative_prompt,
             num_images_per_prompt=num_images,
-            width=width,
-            height=height,
             num_inference_steps=num_steps,
             guidance_scale=guidance_scale,
-            latents=latents.type(torch.float16),
             generator=generator
         ).images
-
-        return latents, generated_images

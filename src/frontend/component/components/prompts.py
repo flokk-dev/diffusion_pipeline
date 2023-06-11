@@ -33,7 +33,7 @@ class Prompts(Component):
         self.negative_prompt: gr.TextArea = None
 
         # ----- Components ----- #
-        with gr.Accordion(label="Prompts", open=False):
+        with gr.Accordion(label="Prompts", open=True):
             with gr.Row():
                 # Creates the text area allowing to specify the prompt
                 self.prompt = gr.TextArea(

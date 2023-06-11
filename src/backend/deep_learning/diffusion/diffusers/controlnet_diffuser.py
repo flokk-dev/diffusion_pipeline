@@ -41,27 +41,69 @@ class ControlNetDiffuser(Diffuser):
         "seg": "lllyasviel/sd-controlnet-seg",
     }
 
-    def __init__(
-            self,
-            controlnet_ids: List[str],
-            pipeline_path: str = "runwayml/stable-diffusion-v1-5"
-    ):
+    PIPELINES = {
+        "StableDiffusion_v1.5": "runwayml/stable-diffusion-v1-5",
+        "StableDiffusion_v2.0": "stabilityai/stable-diffusion-2",
+        "StableDiffusion_v2.1": "stabilityai/stable-diffusion-2-1",
+        "DreamLike_v1.0": "dreamlike-art/dreamlike-photoreal-1.0",
+        "DreamLike_v2.0": "dreamlike-art/dreamlike-photoreal-2.0",
+        "OpenJourney_v4.0": "prompthero/openjourney-v4",
+        "Deliberate_v1.0": "XpucT/Deliberate",
+        "RealisticVision_v2.0": "SG161222/Realistic_Vision_V2.0",
+        "Anything_v4.0": "andite/anything-v4.0"
+    }
+
+    def __init__(self, pipeline_path: str, controlnet_ids: List[str]):
         """
         Initializes an object allowing to generate images using ControlNet + StableDiffusion.
 
         Parameters
         ----------
-            controlnet_ids: List[str]
-                list of the ControlNet to use
             pipeline_path: str
                 path to the pretrained pipeline
+            controlnet_ids: List[str]
+                list of the ControlNet to use
         """
-        super(ControlNetDiffuser, self).__init__(pipeline_path=pipeline_path)
-
         # ----- Attributes ----- #
         # List of the ControlNet ids composing the pipeline
-        self.controlnet_ids = controlnet_ids
+        self._controlnet_ids = controlnet_ids
 
+        # ----- Mother Class ----- #
+        super(ControlNetDiffuser, self).__init__(pipeline_path=pipeline_path)
+
+    def need_instantiation(self, pipeline_path: str, controlnet_ids: List[str]) -> bool:
+        """
+        Verifies if the diffuser need to be re-instantiate.
+
+        Parameters
+        ----------
+            pipeline_path: str
+                path to the desired pipeline
+            controlnet_ids: List[str]
+                list of the desired ControlNet ids
+
+        Returns
+        ----------
+            bool
+                whether or not a re-instantiation is needed
+        """
+        if pipeline_path != self._pipeline_path:
+            return True
+
+        if controlnet_ids != self._controlnet_ids:
+            return True
+
+        return False
+
+    def _load_pipeline(self) -> StableDiffusionControlNetPipeline:
+        """
+        Loads the diffusion pipeline.
+
+        Returns
+        ----------
+            DiffusionPipeline
+                pretrained pipeline
+        """
         # List of the ControlNet composing the pipeline
         control_nets = [
             ControlNetModel.from_pretrained(
@@ -69,31 +111,12 @@ class ControlNetDiffuser(Diffuser):
                 torch_dtype=torch.float16
             )
             for controlnet_id
-            in controlnet_ids
+            in self._controlnet_ids
         ]
 
-    def _load_pipeline(
-            self,
-            control_nets: List[ControlNetModel],
-            pipeline_path: str
-    ) -> StableDiffusionControlNetPipeline:
-        """
-        Loads the diffusion pipeline.
-
-        Parameters
-        ----------
-            control_nets: List[ControlNetModel]
-                list of the ControlNet to use
-            pipeline_path: str
-                path to the pretrained pipeline
-
-        Returns
-        ----------
-            DiffusionPipeline
-                pretrained pipeline
-        """
-        StableDiffusionControlNetPipeline.from_pretrained(
-            pretrained_model_name_or_path=pipeline_path,
+        # Load the pipeline
+        return StableDiffusionControlNetPipeline.from_pretrained(
+            pretrained_model_name_or_path=self.PIPELINES[self._pipeline_path],
             controlnet=control_nets,
             torch_dtype=torch.float16,
             safety_checker=None
@@ -132,7 +155,7 @@ class ControlNetDiffuser(Diffuser):
                 height of the output image
             num_steps: int
                 number of denoising steps
-            guidance_scale: int
+            guidance_scale: float
                 strength of the prompt during the generation
             weights: List[float]
                 weight of each ControlNet
@@ -164,7 +187,13 @@ class ControlNetDiffuser(Diffuser):
 
         # Creates the latents from which the image generation will start
         if latents is None:
-            latents = self._latents_generator(num_images, width, height, generator)
+            latents = self._latents_generator(
+                num_images=num_images,
+                num_channels=self._pipeline.unet.config.in_channels,
+                width=width,
+                height=height,
+                generator=generator
+            )
 
         # Generates images
         generated_images = self._pipeline(

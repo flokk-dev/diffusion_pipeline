@@ -12,17 +12,18 @@ from PIL import Image
 
 # IMPORT: data processing
 import torch
+from torchvision.transforms import ToTensor
 
 # IMPORT: deep learning
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionInpaintPipeline
 
 # IMPORT: project
 from src.backend.deep_learning.diffusion import Diffuser
 
 
-class StableDiffuser(Diffuser):
+class ImageInpaintDiffuser(Diffuser):
     """
-    Represents an object allowing to generate images using StableDiffusion.
+    Represents an object allowing to generate images using image in-painting (StableDiffusion).
 
     Attributes
     ----------
@@ -30,29 +31,22 @@ class StableDiffuser(Diffuser):
             diffusion pipeline needed to generate images
     """
     PIPELINES = {
-        "StableDiffusion_v1.5": "runwayml/stable-diffusion-v1-5",
-        "StableDiffusion_v2.0": "stabilityai/stable-diffusion-2",
-        "StableDiffusion_v2.1": "stabilityai/stable-diffusion-2-1",
-        "DreamLike_v1.0": "dreamlike-art/dreamlike-photoreal-1.0",
-        "DreamLike_v2.0": "dreamlike-art/dreamlike-photoreal-2.0",
-        "OpenJourney_v4.0": "prompthero/openjourney-v4",
-        "Deliberate_v1.0": "XpucT/Deliberate",
-        "RealisticVision_v2.0": "SG161222/Realistic_Vision_V2.0",
-        "Anything_v4.0": "andite/anything-v4.0"
+        "StableDiffusion_v1.2": "stabilityai/stable-diffusion-inpainting",
+        "StableDiffusion_v2.0": "stabilityai/stable-diffusion-2-inpainting",
     }
 
     def __init__(self, pipeline_path: str):
         """
-        Initializes an object allowing to generate images using StableDiffusion.
+        Initializes an object allowing to generate images using in-painting (StableDiffusion).
 
         Parameters
         ----------
             pipeline_path: str
                 path to the pretrained pipeline
         """
-        super(StableDiffuser, self).__init__(pipeline_path=pipeline_path)
+        super(ImageInpaintDiffuser, self).__init__(pipeline_path=pipeline_path)
 
-    def _load_pipeline(self) -> StableDiffusionPipeline:
+    def _load_pipeline(self) -> StableDiffusionInpaintPipeline:
         """
         Loads the diffusion pipeline.
 
@@ -61,7 +55,7 @@ class StableDiffuser(Diffuser):
             DiffusionPipeline
                 pretrained pipeline
         """
-        return StableDiffusionPipeline.from_pretrained(
+        return StableDiffusionInpaintPipeline.from_pretrained(
             pretrained_model_name_or_path=self.PIPELINES[self._pipeline_path],
             torch_dtype=torch.float16,
             safety_checker=None
@@ -70,10 +64,10 @@ class StableDiffuser(Diffuser):
     def __call__(
         self,
         prompt: str,
+        image: torch.Tensor,
+        mask: torch.Tensor,
         negative_prompt: str = "",
         num_images: int = 1,
-        width: int = 512,
-        height: int = 512,
         num_steps: int = 50,
         guidance_scale: float = 7.5,
         latents: torch.Tensor = None,
@@ -86,14 +80,14 @@ class StableDiffuser(Diffuser):
         ----------
             prompt: str
                 prompt describing the output image
+            image: torch.Tensor
+                image to modify
+            mask: torch.Tensor
+                mask indicating what to modify
             negative_prompt: str
                 prompt describing what to avoid in the output image
             num_images: int
                 number of images to generate
-            width: int
-                width of the output image
-            height: int
-                height of the output image
             num_steps: int
                 number of denoising steps
             guidance_scale: float
@@ -110,6 +104,15 @@ class StableDiffuser(Diffuser):
             List[Image.Image]
                 generated images
         """
+        # If the images are not tensors
+        processing: ToTensor = ToTensor()
+
+        if not isinstance(image, torch.FloatTensor):
+            image = processing(image).unsqueeze(0)
+
+        if not isinstance(mask, torch.FloatTensor):
+            mask = processing(mask)[0].unsqueeze(0).unsqueeze(0)
+
         # Creates the object that controls the randomness
         generator = None if seed is None else torch.Generator(device="cpu").manual_seed(seed)
 
@@ -117,19 +120,21 @@ class StableDiffuser(Diffuser):
         if latents is None:
             latents = self._latents_generator(
                 num_images=num_images,
-                num_channels=self._pipeline.unet.config.in_channels,
-                width=width,
-                height=height,
+                num_channels=self._pipeline.vae.config.latent_channels,
+                width=image.shape[-1],
+                height=image.shape[-2],
                 generator=generator
             )
 
         # Generates images
         generated_images = self._pipeline(
             prompt=prompt,
+            image=image,
+            mask_image=mask,
             negative_prompt=negative_prompt,
             num_images_per_prompt=num_images,
-            width=width,
-            height=height,
+            width=image.shape[-1],
+            height=image.shape[-2],
             num_inference_steps=num_steps,
             guidance_scale=guidance_scale,
             latents=latents.type(torch.float16),

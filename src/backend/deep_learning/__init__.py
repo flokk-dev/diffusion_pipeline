@@ -1,5 +1,11 @@
 # Diffusion
-from .diffusion import StableDiffuser, StableInpaintDiffuser, ControlNetDiffuser
+from .diffusion import \
+    StableDiffuser, \
+    ImageInpaintDiffuser, \
+    ControlNetDiffuser, \
+    Pix2PixDiffuser, \
+    Image2ImageDiffuser, \
+    ImageVariationDiffuser
 
 # Others
 from .clip_interrogator import ClipInterrogator

@@ -10,29 +10,31 @@ Purpose:
 from typing import *
 import gradio as gr
 
+import numpy as np
 import torch
 
 # IMPORT: project
 from src.frontend.component import Prompts, Hyperparameters, RankingFeedback
-from src.backend.deep_learning.diffusion import StableDiffuser
+from src.backend.deep_learning.diffusion import ImageVariationDiffuser
 
 
-class StableDiffusionSubPage:
+class ImageVariationSubPage:
     """ Represents the page allowing to process images. """
     def __init__(self):
         """ Initializes the page allowing to process images. """
 
         # ----- Attributes ----- #
         # Creates the object allowing to generate images
-        self.diffuser: StableDiffuser = None
+        self.diffuser: ImageVariationDiffuser = None
 
         # Creates the arguments of the diffusion
         self.args: dict = None
         self.latents: torch.Tensor = None
 
         # ----- Components ----- #
-        # Creates the component allowing to specify the prompt/negative prompt
-        self.prompts: Prompts = Prompts(parent=self)
+        with gr.Accordion(label="Image", open=True):
+            # Creates the component allowing to upload an image
+            image = gr.Image(label="Image").style(height=350)
 
         # Creates the component allowing to adjust the hyperparameters
         self.hyperparameters: Hyperparameters = Hyperparameters(
@@ -49,7 +51,7 @@ class StableDiffusionSubPage:
                 # Creates the list of the available diffusion models
                 pipeline_id: gr.Dropdown = gr.Dropdown(
                     label="Diffusion model",
-                    choices=StableDiffuser.PIPELINES.keys()
+                    choices=ImageVariationDiffuser.PIPELINES.keys()
                 )
 
                 # Creates the button allowing to generate images
@@ -61,7 +63,7 @@ class StableDiffusionSubPage:
                 fn=self.on_click,
                 inputs=[
                     pipeline_id,
-                    *self.prompts.retrieve_info(),
+                    image,
                     *self.hyperparameters.retrieve_info()
                 ],
                 outputs=[
@@ -76,8 +78,7 @@ class StableDiffusionSubPage:
     def on_click(
             self,
             pipeline_id: str,
-            prompt: str,
-            negative_prompt: str = "",
+            image: np.ndarray,
             num_images: int = 1,
             seed: int = None,
             width: int = 512,
@@ -87,8 +88,7 @@ class StableDiffusionSubPage:
     ):
         # Creates the dictionary of arguments
         self.args = {
-            "prompt": prompt,
-            "negative_prompt": negative_prompt,
+            "image": image,
             "num_images": int(num_images) if num_images > 0 else 1,
             "width": width,
             "height": height,
@@ -99,7 +99,7 @@ class StableDiffusionSubPage:
 
         # Instantiates the StableDiffusion pipeline if needed
         if self.diffuser is None or self.diffuser.need_instantiation(pipeline_id):
-            self.diffuser = StableDiffuser(pipeline_id)
+            self.diffuser = ImageVariationDiffuser(pipeline_id)
 
         self.latents, generated_images = self.diffuser(**self.args)
         return generated_images, \

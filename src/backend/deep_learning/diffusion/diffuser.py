@@ -26,11 +26,8 @@ class Diffuser:
         _pipeline: StableDiffusionPipeline
             diffusion pipeline needed to generate images
     """
-    MODEL = [
-        "runwayml/stable-diffusion-v1-5"
-    ]
 
-    def __init__(self, pipeline_path: str = "runwayml/stable-diffusion-v1-5"):
+    def __init__(self, pipeline_path: str):
         """
         Initializes an object allowing to generate images using diffusion pipeline.
 
@@ -40,8 +37,10 @@ class Diffuser:
                 path to the pretrained pipeline
         """
         # ----- Attributes ----- #
+        self._pipeline_path = pipeline_path
+
         # Pipeline allowing to generate images
-        self._pipeline: Any = self._load_pipeline(pipeline_path=pipeline_path)
+        self._pipeline: Any = self._load_pipeline()
 
         # Pipeline's noise scheduler allowing to modulate the denoising
         self._pipeline.scheduler = UniPCMultistepScheduler.from_config(
@@ -51,14 +50,27 @@ class Diffuser:
         # Optimizes the use of the GPU's VRAM
         self._pipeline.enable_model_cpu_offload()
 
-    def _load_pipeline(self, pipeline_path: str) -> Any:
+    def need_instantiation(self, pipeline_path: str) -> bool:
         """
-        Loads the diffusion pipeline.
+        Verifies if the diffuser need to be re-instantiate.
 
         Parameters
         ----------
             pipeline_path: str
-                path to the pretrained pipeline
+                path to the desired pipeline
+
+        Returns
+        ----------
+            bool
+                whether or not a re-instantiation is needed
+        """
+        if self._pipeline_path != pipeline_path:
+            return True
+        return False
+
+    def _load_pipeline(self) -> Any:
+        """
+        Loads the diffusion pipeline.
 
         Returns
         ----------
@@ -74,7 +86,8 @@ class Diffuser:
 
     def _latents_generator(
         self,
-        num_images,
+        num_images: int,
+        num_channels: int,
         width: int,
         height: int,
         generator: torch.Generator | None
@@ -86,6 +99,8 @@ class Diffuser:
         ----------
             num_images: int
                 number of images to generate
+            num_channels: int
+                number of channels required by the model
             width: int
                 width of the output image
             height: int
@@ -99,15 +114,18 @@ class Diffuser:
                 latents from which the image generation has started
         """
         # Creates the latents from which the image generation will start
-        return torch.randn(
+        latents = torch.randn(
             size=(
                 num_images,
-                self._pipeline.unet.config.in_channels,
+                num_channels,
                 height // self._pipeline.vae_scale_factor,
                 width // self._pipeline.vae_scale_factor
             ),
             generator=generator
         )
+
+        # Scales the latents by the standard deviation required by the scheduler
+        return latents * self._pipeline.scheduler.init_noise_sigma
 
     def __call__(
         self,
@@ -136,7 +154,7 @@ class Diffuser:
                 height of the output image
             num_steps: int
                 number of denoising steps
-            guidance_scale: int
+            guidance_scale: float
                 strength of the prompt during the generation
             latents: torch.Tensor
                 random noise from which to start the generation

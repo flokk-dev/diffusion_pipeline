@@ -25,6 +25,14 @@ class ControlNetSubPage:
     def __init__(self):
         """ Initializes the page allowing to process images. """
 
+        # ----- Attributes ----- #
+        # Creates the object allowing to generate images
+        self.diffuser: ControlNetDiffuser = None
+
+        # Creates the arguments of the diffusion
+        self.args: dict = None
+        self.latents: torch.Tensor = None
+
         # ----- Components ----- #
         # Creates the component allowing to select the ControlNets to use
         self.controlnet = ControlNet(parent=self)
@@ -33,29 +41,32 @@ class ControlNetSubPage:
         self.prompts = Prompts(parent=self)
 
         # Creates the component allowing to adjust the hyperparameters
-        self.hyperparameters = Hyperparameters(parent=self)
+        self.hyperparameters = Hyperparameters(
+            parent=self,
+            components=["num_images", "seed", "width", "height", "guidance_scale", "num_steps"]
+        )
 
-        # ----- Attributes ----- #
-        # Creates the object allowing to generate images
-        self.diffusion: type | ControlNetDiffuser = ControlNetDiffuser
-
-        # Creates the arguments of the diffusion
-        self.args: dict = None
-        self.latents: torch.Tensor = None
-
-        # ----- Components ----- #
+        # Creates the component allowing to generate and display images
         with gr.Accordion(label="Generation", open=True):
             # Creates the carousel containing the generated images
             self.generated_images: gr.Gallery = gr.Gallery(label="Images").style(grid=3)
 
-            # Creates the button allowing to generate images
-            button: gr.Button = gr.Button("Generate new images").style(full_width=True)
+            with gr.Row():
+                # Creates the list of the available diffusion models
+                pipeline_id: gr.Dropdown = gr.Dropdown(
+                    label="Diffusion model",
+                    choices=ControlNetDiffuser.PIPELINES.keys()
+                )
+
+                # Creates the button allowing to generate images
+                button: gr.Button = gr.Button("Generate new images").style(full_width=True)
 
         # Creates the component allowing the user to give its feedback
         self.ranking_feedback: RankingFeedback = RankingFeedback(parent=self)
         button.click(
             fn=self.on_click,
             inputs=[
+                pipeline_id,
                 *self.controlnet.retrieve_info(),
                 *self.prompts.retrieve_info(),
                 *self.hyperparameters.retrieve_info()
@@ -71,17 +82,18 @@ class ControlNetSubPage:
 
     def on_click(
             self,
+            pipeline_id: str,
             mask_0: np.ndarray, processing_0: str, weight_0: float,
             mask_1: np.ndarray, processing_1: str, weight_1: float,
             mask_2: np.ndarray, processing_2: str, weight_2: float,
             prompt: str,
             negative_prompt: str = "",
             num_images: int = 1,
+            seed: int = None,
             width: int = 512,
             height: int = 512,
-            num_steps: int = 50,
             guidance_scale: float = 7.5,
-            seed: int = None
+            num_steps: int = 50
     ):
         # Aggregates the ControlNet elements together
         masks: List[np.ndarray] = list()
@@ -99,8 +111,8 @@ class ControlNetSubPage:
                 weights.append(weight)
 
         # Instantiates the ControlNet pipeline if needed
-        if isinstance(self.diffusion, type) or controlnet_ids != self.diffusion.controlnet_ids:
-            self.diffusion = self.diffusion(controlnet_ids=controlnet_ids)
+        if self.diffuser is None or self.diffuser.need_instantiation(pipeline_id, controlnet_ids):
+            self.diffuser = ControlNetDiffuser(pipeline_id, controlnet_ids)
 
         # Creates the dictionary of arguments
         self.args = {
@@ -116,7 +128,7 @@ class ControlNetSubPage:
             "seed": seed if seed >= 0 else None,
         }
 
-        self.latents, generated_images = self.diffusion(**self.args)
+        self.latents, generated_images = self.diffuser(**self.args)
         return generated_images, \
             gr.update(open=True, visible=True), \
             gr.update(visible=True), gr.update(visible=False), gr.update(visible=False)
@@ -163,26 +175,24 @@ class ControlNet(Component):
                             self.masks.append(gr.Image(label="Mask").style(height=350))
 
                     with gr.Row():
-                        with gr.Column(scale=1):
-                            # Creates the select box allowing to select the image processing
-                            self.processing.append(
-                                gr.Dropdown(
-                                    label="Processing",
-                                    choices=self.image_processing_manager.keys()
-                                )
+                        # Creates the select box allowing to select the image processing
+                        self.processing.append(
+                            gr.Dropdown(
+                                label="Processing",
+                                choices=self.image_processing_manager.keys()
                             )
+                        )
 
-                        with gr.Column(scale=1):
-                            # Creates the select box allowing to select the ControlNet
-                            self.weights.append(
-                                gr.Slider(
-                                    label="Weight",
-                                    minimum=0.0, maximum=1.0,
-                                    value=1.0,
-                                    step=0.01,
-                                    interactive=True
-                                )
+                        # Creates the select box allowing to select the ControlNet
+                        self.weights.append(
+                            gr.Slider(
+                                label="Weight",
+                                minimum=0.0, maximum=1.0,
+                                value=1.0,
+                                step=0.01,
+                                interactive=True
                             )
+                        )
 
                     # Creates the button allowing to run the image processing
                     button = gr.Button("Process image")

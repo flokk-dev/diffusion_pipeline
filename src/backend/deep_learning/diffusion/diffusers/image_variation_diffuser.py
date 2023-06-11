@@ -12,17 +12,18 @@ from PIL import Image
 
 # IMPORT: data processing
 import torch
+from torchvision.transforms import ToTensor
 
 # IMPORT: deep learning
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionImageVariationPipeline
 
 # IMPORT: project
 from src.backend.deep_learning.diffusion import Diffuser
 
 
-class StableDiffuser(Diffuser):
+class ImageVariationDiffuser(Diffuser):
     """
-    Represents an object allowing to generate images using StableDiffusion.
+    Represents an object allowing to generate images using image variation (StableDiffusion).
 
     Attributes
     ----------
@@ -35,24 +36,24 @@ class StableDiffuser(Diffuser):
         "StableDiffusion_v2.1": "stabilityai/stable-diffusion-2-1",
         "DreamLike_v1.0": "dreamlike-art/dreamlike-photoreal-1.0",
         "DreamLike_v2.0": "dreamlike-art/dreamlike-photoreal-2.0",
-        "OpenJourney_v4.0": "prompthero/openjourney-v4",
-        "Deliberate_v1.0": "XpucT/Deliberate",
+        "OpenJourney_v4": "prompthero/openjourney-v4",
+        "Deliberate_v1": "XpucT/Deliberate",
         "RealisticVision_v2.0": "SG161222/Realistic_Vision_V2.0",
-        "Anything_v4.0": "andite/anything-v4.0"
+        "Anything_v4": "andite/anything-v4.0"
     }
 
     def __init__(self, pipeline_path: str):
         """
-        Initializes an object allowing to generate images using StableDiffusion.
+        Initializes an object allowing to generate images using image variation (StableDiffusion).
 
         Parameters
         ----------
             pipeline_path: str
                 path to the pretrained pipeline
         """
-        super(StableDiffuser, self).__init__(pipeline_path=pipeline_path)
+        super(ImageVariationDiffuser, self).__init__(pipeline_path=pipeline_path)
 
-    def _load_pipeline(self) -> StableDiffusionPipeline:
+    def _load_pipeline(self) -> StableDiffusionImageVariationPipeline:
         """
         Loads the diffusion pipeline.
 
@@ -61,7 +62,7 @@ class StableDiffuser(Diffuser):
             DiffusionPipeline
                 pretrained pipeline
         """
-        return StableDiffusionPipeline.from_pretrained(
+        return StableDiffusionImageVariationPipeline.from_pretrained(
             pretrained_model_name_or_path=self.PIPELINES[self._pipeline_path],
             torch_dtype=torch.float16,
             safety_checker=None
@@ -69,7 +70,7 @@ class StableDiffuser(Diffuser):
 
     def __call__(
         self,
-        prompt: str,
+        image: torch.Tensor,
         negative_prompt: str = "",
         num_images: int = 1,
         width: int = 512,
@@ -78,14 +79,14 @@ class StableDiffuser(Diffuser):
         guidance_scale: float = 7.5,
         latents: torch.Tensor = None,
         seed: int = None
-    ) -> Tuple[torch.Tensor, List[Image.Image]]:
+    ) -> List[Image.Image]:
         """
         Generates images.
 
         Parameters
         ----------
-            prompt: str
-                prompt describing the output image
+            image: torch.Tensor
+                image to modify
             negative_prompt: str
                 prompt describing what to avoid in the output image
             num_images: int
@@ -110,6 +111,10 @@ class StableDiffuser(Diffuser):
             List[Image.Image]
                 generated images
         """
+        # If the images are not tensors
+        if not isinstance(image, torch.FloatTensor):
+            image = ToTensor()(image).unsqueeze(0)
+
         # Creates the object that controls the randomness
         generator = None if seed is None else torch.Generator(device="cpu").manual_seed(seed)
 
@@ -125,7 +130,7 @@ class StableDiffuser(Diffuser):
 
         # Generates images
         generated_images = self._pipeline(
-            prompt=prompt,
+            image=image,
             negative_prompt=negative_prompt,
             num_images_per_prompt=num_images,
             width=width,
@@ -136,4 +141,4 @@ class StableDiffuser(Diffuser):
             generator=generator
         ).images
 
-        return latents, generated_images
+        return generated_images

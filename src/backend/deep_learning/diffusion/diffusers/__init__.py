@@ -1,3 +1,6 @@
 from .stable_diffuser import StableDiffuser
-from .stable_inpaint_diffuser import StableInpaintDiffuser
+from .image_inpaint_diffuser import ImageInpaintDiffuser
 from .controlnet_diffuser import ControlNetDiffuser
+from .pix2pix_diffuser import Pix2PixDiffuser
+from .image2image_diffuser import Image2ImageDiffuser
+from .image_variation_diffuser import ImageVariationDiffuser
