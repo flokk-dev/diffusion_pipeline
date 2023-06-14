@@ -95,7 +95,7 @@ class Image2ImageSubPage:
         }
 
         # Instantiates the StableDiffusion pipeline if needed
-        if self.diffuser is None or self.diffuser.need_instantiation(pipeline_id):
+        if self.diffuser is None or self.diffuser.is_different(pipeline_id):
             self.diffuser = Image2ImageDiffuser(pipeline_id)
 
         return self.diffuser(**self.args)

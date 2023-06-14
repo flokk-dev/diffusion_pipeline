@@ -111,7 +111,7 @@ class ControlNetSubPage:
                 weights.append(weight)
 
         # Instantiates the ControlNet pipeline if needed
-        if self.diffuser is None or self.diffuser.need_instantiation(pipeline_id, controlnet_ids):
+        if self.diffuser is None or self.diffuser.is_different(pipeline_id, controlnet_ids):
             self.diffuser = ControlNetDiffuser(pipeline_id, controlnet_ids)
 
         # Creates the dictionary of arguments

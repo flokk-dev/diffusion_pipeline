@@ -71,7 +71,7 @@ class ControlNetDiffuser(Diffuser):
         # ----- Mother Class ----- #
         super(ControlNetDiffuser, self).__init__(pipeline_path=pipeline_path)
 
-    def need_instantiation(self, pipeline_path: str, controlnet_ids: List[str]) -> bool:
+    def is_different(self, pipeline_path: str, controlnet_ids: List[str]) -> bool:
         """
         Verifies if the diffuser need to be re-instantiate.
 

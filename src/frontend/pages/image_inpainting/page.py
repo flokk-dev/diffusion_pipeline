@@ -96,7 +96,7 @@ class ImageInpainting:
         }
 
         # Instantiates the StableInpaintDiffuser pipeline if needed
-        if self.diffuser is None or self.diffuser.need_instantiation(pipeline_id):
+        if self.diffuser is None or self.diffuser.is_different(pipeline_id):
             self.diffuser = ImageInpaintDiffuser(pipeline_id)
 
         self.latents, generated_images = self.diffuser(**self.args)

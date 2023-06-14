@@ -98,7 +98,7 @@ class StableDiffusionSubPage:
         }
 
         # Instantiates the StableDiffusion pipeline if needed
-        if self.diffuser is None or self.diffuser.need_instantiation(pipeline_id):
+        if self.diffuser is None or self.diffuser.is_different(pipeline_id):
             self.diffuser = StableDiffuser(pipeline_id)
 
         self.latents, generated_images = self.diffuser(**self.args)

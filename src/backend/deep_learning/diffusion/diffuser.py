@@ -50,7 +50,7 @@ class Diffuser:
         # Optimizes the use of the GPU's VRAM
         self._pipeline.enable_model_cpu_offload()
 
-    def need_instantiation(self, pipeline_path: str) -> bool:
+    def is_different(self, pipeline_path: str) -> bool:
         """
         Verifies if the diffuser need to be re-instantiate.
 
