@@ -7,12 +7,13 @@ Purpose:
 """
 
 # IMPORT: utils
+from typing import *
 from pynvml import *
 
 import datetime
 
 # IMPORT: dataset processing
-import PIL
+import cv2
 import numpy as np
 
 
@@ -27,61 +28,24 @@ def gpu_utilization():
     handle = nvmlDeviceGetHandleByIndex(0)
     info = nvmlDeviceGetMemoryInfo(handle)
 
-    return f"{(info.used / 1024**3):.3f}Go"
+    return f"{(info.used / 1024 ** 3):.3f}Go"
 
 
-# ---------- OBJECTS ---------- #
+# ---------- DATA PROCESSING ---------- #
 
-class Image:
-    """ Represents an Image. """
-    def __init__(
-        self,
-        image_id: int,
-        image_path: str
-    ):
-        """
-        Initializes an Image.
+def resize_image(image: np.ndarray, resolution: int):
+    h, w = image.shape[:2]
+    h = float(h)
+    w = float(w)
+    k = float(resolution) / min(h, w)
+    h *= k
+    w *= k
+    h = int(np.round(h / 8.0)) * 8
+    w = int(np.round(w / 8.0)) * 8
+    print(h, w)
 
-        Parameters
-        ----------
-            image_id: int
-                id of the image
-            image_path: str
-                path of the image
-        """
-        # ----- Attributes ----- #
-        self.id: int = image_id
-        self.path: str = image_path
-
-        # Image
-        self.image: np.ndarray = np.array(PIL.Image.open(image_path).convert("RGB"))
-
-
-class ImageToProcess(Image):
-    """ Represents an ImageToProcess. """
-    def __init__(
-        self,
-        image_id: int,
-        image_path: str
-    ):
-        """
-        Initializes an ImageToProcess.
-
-        Parameters
-        ----------
-            image_id: int
-                id of the image
-            image_path: str
-                path of the image
-        """
-        # ----- Mother class ----- #
-        super(ImageToProcess, self).__init__(image_id, image_path)
-
-        # ----- Attributes ----- #
-        self.process_id: str = ""
-        self.modified_image: np.ndarray = np.zeros_like(self.image)
-
-    def reset(self):
-        """ Resets the modified image. """
-        self.process_id = ""
-        self.modified_image = np.zeros_like(self.image)
+    return cv2.resize(
+        image,
+        (w, h),
+        interpolation=cv2.INTER_LANCZOS4 if k > 1 else cv2.INTER_AREA
+    )
