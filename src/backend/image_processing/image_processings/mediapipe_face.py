@@ -46,6 +46,4 @@ class MediapipeFace(ImageProcessing):
         """
         # Runs the processing into the image
         output_image: np.ndarray = self._processor(image=image, return_pil=False)
-
-        # Resizes the output image to its original shape
-        return self._resize(image=output_image, shape=image.shape)
+        return self._resize(image, output_image)

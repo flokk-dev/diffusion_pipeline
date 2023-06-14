@@ -1,1 +1,1 @@
-from .page import ImageToPromptPage
+from .image_to_prompt import Image2PromptPage

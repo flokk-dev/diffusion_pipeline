@@ -21,7 +21,7 @@ REQUIREMENTS = os.path.join(RESOURCES, "requirements.txt")
 # CONFIG
 CONFIG = os.path.join(RESOURCES, "config")
 
-LANGUAGES = os.path.join(CONFIG, "languages.json")
+HUGGINGFACE_REPO = os.path.join(CONFIG, "huggingface_repo.json")
 
 # DATA
 DATA = os.path.join(RESOURCES, "data")
