@@ -12,6 +12,7 @@ import numpy as np
 
 # IMPORT: data processing
 import cv2
+import utils
 
 
 class ImageProcessing:
@@ -24,6 +25,13 @@ class ImageProcessing:
         # ----- Attributes ----- #
         # Object allowing to process images
         self._processor: Any = None
+
+    def _resize(self, input_image: np.ndarray, output_image: np.ndarray):
+        # Retrieves the shape
+        h, w = input_image.shape[:2]
+
+        # Resize to the shape of the input image
+        return cv2.resize(output_image, (w, h), interpolation=cv2.INTER_AREA)
 
     def __call__(self, image: np.ndarray) -> np.ndarray:
         """

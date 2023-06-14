@@ -46,7 +46,9 @@ class Canny(ImageProcessing):
                 processed image
         """
         # Runs the processing into the image
-        return self._processor(
+        output_image: np.ndarray = self._processor(
             img=image,
             low_threshold=thresholds[0], high_threshold=thresholds[1]
         )
+
+        return self._resize(image, output_image)

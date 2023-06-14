@@ -19,32 +19,33 @@ from src.backend.feedback import RankingFeedback as Algorithm
 
 
 class RankingFeedback(Component):
-    """ Represents the component allowing to specify the prompt/negative prompt. """
+    """ Allows to upgrade an image using human feedback. """
 
     def __init__(self, parent: Any):
         """
-        Initializes the component allowing to specify the prompt/negative prompt.
+        Allows to upgrade an image using human feedback.
 
         Parameters
         ----------
             parent: Any
                 parent of the component
         """
-        super(RankingFeedback, self).__init__(parent=parent)
+        super(RankingFeedback, self).__init__(parent)
 
         # ----- Attributes ----- #
+        self.parent: Any = parent
+
         # Algorithm needed to use the feedback
         self.algorithm: Algorithm = None
 
         # ----- Components ----- #
-        self.container: gr.Accordion = gr.Accordion(label="Feedback", open=False, visible=False)
-        with self.container:
-            self.row_1: gr.Row = gr.Row(visible=False)
-            self.row_2: gr.Row = gr.Row(visible=False)
-            self.row_3: gr.Row = gr.Row(visible=False)
+        self.row_1: gr.Accordion = gr.Accordion(label="Feedback", open=True, visible=False)
+        self.row_2: gr.Accordion = gr.Accordion(label="Feedback", open=True, visible=False)
+        self.row_3: gr.Accordion = gr.Accordion(label="Feedback", open=True, visible=False)
 
-            # If the algorithm hasn't been instantiated yet
-            with self.row_1:
+        # If the algorithm hasn't been instantiated yet
+        with self.row_1:
+            with gr.Row():
                 # Creates the text area allowing to specify the best image
                 # Creates the text area allowing to specify the best image
                 start_image = gr.Number(
@@ -59,68 +60,68 @@ class RankingFeedback(Component):
                     interactive=True
                 )
 
-                # Creates the button allowing to instantiate the algorithm
-                button_1: gr.Button = gr.Button("Give feedback").style(full_width=True)
-                button_1.click(
-                    fn=self.instantiate_algorithm,
-                    inputs=[
-                        start_image,
-                        num_images,
-                        self.parent.generated_images
-                    ],
-                    outputs=[
-                        self.parent.generated_images,
-                        self.row_1, self.row_2, self.row_3
-                    ]
-                )
+            # Creates the button allowing to instantiate the algorithm
+            button_1: gr.Button = gr.Button("Give feedback").style(full_width=True)
+            button_1.click(
+                fn=self.instantiate_algorithm,
+                inputs=[
+                    start_image,
+                    num_images,
+                    self.parent.image_generation.generated_images
+                ],
+                outputs=[
+                    self.parent.image_generation.generated_images,
+                    self.row_1, self.row_2, self.row_3
+                ]
+            )
 
-            # If the algorithm's step is "gradient_estimation"
-            with self.row_2:
-                # Creates the text area allowing the user to give its feedback
-                ranking = gr.Textbox(
-                    label="Images ranking",
-                    placeholder="Please rank the images from best to worst (ex: 6-1-3-4)",
-                    lines=2,
-                    interactive=True
-                )
+        # If the algorithm's step is "gradient_estimation"
+        with self.row_2:
+            # Creates the text area allowing the user to give its feedback
+            ranking = gr.Textbox(
+                label="Images ranking",
+                placeholder="Please rank the images from best to worst (ex: 6-1-3-4)",
+                lines=2,
+                interactive=True
+            )
 
-                # Creates the button allowing to run a step of the algorithm
-                button_2: gr.Button = gr.Button("Give feedback").style(full_width=True)
-                button_2.click(
-                    fn=self.on_click,
-                    inputs=[
-                        ranking,
-                        self.parent.generated_images
-                    ],
-                    outputs=[
-                        self.parent.generated_images,
-                        self.row_1, self.row_2, self.row_3
-                    ]
-                )
+            # Creates the button allowing to run a step of the algorithm
+            button_2: gr.Button = gr.Button("Give feedback").style(full_width=True)
+            button_2.click(
+                fn=self.on_click,
+                inputs=[
+                    ranking,
+                    self.parent.image_generation.generated_images
+                ],
+                outputs=[
+                    self.parent.image_generation.generated_images,
+                    self.row_1, self.row_2, self.row_3
+                ]
+            )
 
-            # If the algorithm's step is "line_search"
-            with self.row_3:
-                # Creates the text area allowing the user to give its feedback
-                best_image = gr.Textbox(
-                    label="Best image",
-                    placeholder="Please specify the index of the best image",
-                    lines=2,
-                    interactive=True
-                )
+        # If the algorithm's step is "line_search"
+        with self.row_3:
+            # Creates the text area allowing the user to give its feedback
+            best_image = gr.Textbox(
+                label="Best image",
+                placeholder="Please specify the index of the best image",
+                lines=2,
+                interactive=True
+            )
 
-                # Creates the button allowing to run a step of the algorithm
-                button_3: gr.Button = gr.Button("Give feedback").style(full_width=True)
-                button_3.click(
-                    fn=self.on_click,
-                    inputs=[
-                        best_image,
-                        self.parent.generated_images
-                    ],
-                    outputs=[
-                        self.parent.generated_images,
-                        self.row_1, self.row_2, self.row_3
-                    ]
-                )
+            # Creates the button allowing to run a step of the algorithm
+            button_3: gr.Button = gr.Button("Give feedback").style(full_width=True)
+            button_3.click(
+                fn=self.on_click,
+                inputs=[
+                    best_image,
+                    self.parent.image_generation.generated_images
+                ],
+                outputs=[
+                    self.parent.image_generation.generated_images,
+                    self.row_1, self.row_2, self.row_3
+                ]
+            )
 
     def instantiate_algorithm(
             self,
@@ -186,7 +187,7 @@ class RankingFeedback(Component):
                 latents from which to start the generation
         """
         # Generates images using the diffusion object
-        return self.parent.diffuser(**{
+        return self.parent.image_generation.diffuser(**{
             **self.parent.args,
             **{"num_images": latents.shape[0], "latents": latents}
         })

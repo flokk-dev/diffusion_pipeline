@@ -54,4 +54,5 @@ class Midas(ImageProcessing):
         output_image = self._processor(input_image=output_image)
 
         # Resizes the output image to its original shape
-        return np.stack((output_image, output_image, output_image), axis=2)
+        output_image: np.ndarray = np.stack((output_image, output_image, output_image), axis=2)
+        return self._resize(image, output_image)

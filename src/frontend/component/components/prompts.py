@@ -15,17 +15,18 @@ from src.frontend.component import Component
 
 
 class Prompts(Component):
-    """ Represents the component allowing to specify the prompt/negative prompt. """
+    """ Allows to specify the prompt/negative prompt. """
+
     def __init__(self, parent: Any):
         """
-        Initializes the component allowing to specify the prompt/negative prompt.
+        Allows to specify the prompt/negative prompt.
 
         Parameters
         ----------
             parent: Any
                 parent of the component
         """
-        super(Prompts, self).__init__(parent=parent)
+        super(Prompts, self).__init__(parent)
 
         # ----- Attributes ----- #
         # Prompts

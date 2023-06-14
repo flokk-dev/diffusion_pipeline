@@ -47,4 +47,5 @@ class OpenPose(ImageProcessing):
                 processed image
         """
         # Runs the processing into the image
-        return self._processor(input_image=image, return_pil=False)
+        output_image: np.ndarray = self._processor(input_image=image, return_pil=False)
+        return self._resize(image, output_image)

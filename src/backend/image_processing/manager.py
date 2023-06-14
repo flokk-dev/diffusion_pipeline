@@ -22,19 +22,19 @@ class ImageProcessingManager(Dict):
         super(ImageProcessingManager, self).__init__()
 
         # Adds all the processing to the manager
-        self["canny"]: Canny = Canny
-        self["hed"]: Hed = Hed
-        self["lineart"]: Lineart = Lineart
-        self["lineart anime"]: LineartAnime = LineartAnime
-        self["mediapipe face"]: MediapipeFace = MediapipeFace
-        self["midas"]: Midas = Midas
-        self["mlsd"]: MLSD = MLSD
-        self["normal"]: NormalBae = NormalBae
-        self["pidi"]: PidiNet = PidiNet
-        self["openpose"]: OpenPose = OpenPose
-        self["sam"]: Sam = Sam
-        self["shuffle"]: ContentShuffle = ContentShuffle
-        self["zoe"]: Zoe = Zoe
+        self["Canny"]: Canny = Canny
+        self["Depth"]: Midas = Midas
+        self["Hed"]: Hed = Hed
+        self["Lineart"]: Lineart = Lineart
+        self["Lineart anime"]: LineartAnime = LineartAnime
+        # self["mediapipe face"]: MediapipeFace = MediapipeFace
+        self["MLSD"]: MLSD = MLSD
+        self["Normal BAE"]: NormalBae = NormalBae
+        # self["pidi"]: PidiNet = PidiNet
+        self["OpenPose"]: OpenPose = OpenPose
+        self["Seg"]: Sam = Sam
+        self["Shuffle"]: ContentShuffle = ContentShuffle
+        # self["zoe"]: Zoe = Zoe
 
     def __call__(self, image: np.ndarray, processing_id: str) -> np.ndarray:
         """

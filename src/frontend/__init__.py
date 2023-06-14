@@ -1,6 +1,5 @@
 from .pages import \
-    Text2ImagePage, \
-    Image2ImagePage, \
+    StableDiffusionPage, ControlNetPage, \
+    ImageInpaintingPage, Image2ImagePage, Pix2PixPage, \
     Image2PromptPage, \
-    Text2PromptPage, \
-    ImageInpainting
+    Text2PromptPage

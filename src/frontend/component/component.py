@@ -11,18 +11,18 @@ from typing import *
 
 
 class Component:
-    """ Represents a component. """
+    """ Component. """
+
     def __init__(self, parent: Any):
         """
-        Initializes a component.
+        Component.
 
         Parameters
         ----------
             parent: Any
                 parent of the component
         """
-        # ----- Attributes ----- #
-        self.parent: Any = parent
+        self.parent = parent
 
     def retrieve_info(self) -> List[Any]:
         """

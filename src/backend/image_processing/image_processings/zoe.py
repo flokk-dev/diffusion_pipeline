@@ -46,4 +46,5 @@ class Zoe(ImageProcessing):
                 processed image
         """
         # Runs the processing into the image
-        return self._processor(input_image=image)
+        output_image: np.ndarray = self._processor(input_image=image)
+        return self._resize(image, output_image)
