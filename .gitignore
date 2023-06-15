@@ -9,6 +9,7 @@ cache/
 
 # Distribution / packaging
 .Python
+resources/models/
 wandb/
 build/
 develop-eggs/
