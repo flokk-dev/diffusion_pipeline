@@ -2,9 +2,6 @@
 from .diffuser import Diffuser
 
 # Diffusers
-from .diffuser import Diffuser, \
-    StableDiffuser, \
-    ControlNetDiffuser, \
-    ImageInpaintDiffuser, \
-    Pix2PixDiffuser, \
-    Image2ImageDiffuser
+from .diffusers import \
+    StableDiffuser, ControlNetDiffuser, \
+    Image2ImageDiffuser, ImageInpaintDiffuser, Pix2PixDiffuser

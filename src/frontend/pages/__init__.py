@@ -9,3 +9,6 @@ from .image_to_prompt import Image2PromptPage
 
 # Text to prompt
 from .text_to_prompt import Text2PromptPage
+
+# Text diffuser
+from .text_diffuser import Text2TextImagePage, Image2TextImagePage, ImageInPaintPage

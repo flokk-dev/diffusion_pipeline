@@ -8,16 +8,12 @@ Purpose:
 
 # IMPORT: utils
 from typing import *
-import json
 
 # IMPORT: data processing
 import torch
 
 # IMPORT: deep learning
 from diffusers import UniPCMultistepScheduler
-
-# IMPORT: project
-import paths
 
 
 class Diffuser:
@@ -78,7 +74,14 @@ class Diffuser:
         """
         raise NotImplementedError()
 
-    def _randn(self, b: int, c: int, w: int, h: int, generator: torch.Generator) -> torch.Tensor:
+    def _randn(
+            self,
+            b: int,
+            c: int,
+            w: int,
+            h: int,
+            generator: torch.Generator | None
+    ) -> torch.Tensor:
         """
         Generates normalized random noise according to the pipeline components.
 

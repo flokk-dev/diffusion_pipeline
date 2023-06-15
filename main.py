@@ -15,7 +15,8 @@ from src.frontend import \
     StableDiffusionPage, ControlNetPage, \
     ImageInpaintingPage, Image2ImagePage, Pix2PixPage, \
     Image2PromptPage, \
-    Text2PromptPage
+    Text2PromptPage, \
+    Text2TextImagePage, Image2TextImagePage, ImageInPaintPage
 
 with gr.Blocks() as demo:
     # ----- Components ----- #
@@ -35,6 +36,15 @@ with gr.Blocks() as demo:
         with gr.Tab("Pix2Pix"):
             Pix2PixPage()
 
+    # Instantiates the Text Diffuser page
+    with gr.Tab("Text-Diffuser"):
+        with gr.Tab("Text2Image"):
+            Text2TextImagePage()
+        with gr.Tab("Image2Image"):
+            Image2TextImagePage()
+        with gr.Tab("Inpainting"):
+            ImageInPaintPage()
+
     # Instantiates the Image-to-Prompt page
     with gr.Tab("Image-to-Prompt"):
         Image2PromptPage()
@@ -42,6 +52,7 @@ with gr.Blocks() as demo:
     # Instantiates the Text-to-Prompt page
     with gr.Tab("Text-to-Prompt"):
         Text2PromptPage()
+
 
 if __name__ == "__main__":
     demo.launch(favicon_path=FAVICON, server_port=8080)

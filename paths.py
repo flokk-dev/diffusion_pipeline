@@ -18,16 +18,16 @@ RESOURCES = os.path.join(ROOT, "resources")
 FAVICON = os.path.join(RESOURCES, "favicon.ico")
 REQUIREMENTS = os.path.join(RESOURCES, "requirements.txt")
 
-# CONFIG
-CONFIG = os.path.join(RESOURCES, "config")
-
-HUGGINGFACE_REPO = os.path.join(CONFIG, "huggingface_repo.json")
-
 # DATA
 DATA = os.path.join(RESOURCES, "data")
 
 IMAGES = os.path.join(DATA, "images")
 MASKS = os.path.join(DATA, "masks")
+
+# MODELS
+MODELS = os.path.join(RESOURCES, "models")
+
+TEXT_DIFFUSER = os.path.join(MODELS, "text_diffuser")
 
 
 # ----- SRC ----- #
