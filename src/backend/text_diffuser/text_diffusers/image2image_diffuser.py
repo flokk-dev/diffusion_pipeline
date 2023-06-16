@@ -14,10 +14,10 @@ import numpy as np
 from PIL import Image
 
 import torch
-from torchvision.transforms import Compose, ToTensor, Normalize, ToPILImage
+from torchvision.transforms import Compose, ToTensor, Normalize
 
 # IMPORT: project
-from src.backend.text_diffuser import TextDiffuser, utils
+from src.backend.text_diffuser import TextDiffuser
 
 
 class Image2ImageDiffuser(TextDiffuser):
@@ -66,52 +66,55 @@ class Image2ImageDiffuser(TextDiffuser):
             torch.Tensor
                 ...
         """
-        # Converts the mask to tensor
         processing = Compose([ToTensor(), Normalize([0.5], [0.5])])
-        prompt_mask = processing(image).unsqueeze(0).cuda()
 
-        # Creates the segmentation mask
-        with torch.no_grad():
-            segmentation_mask = self._load_segmentation_model()(prompt_mask)
-
-        segmentation_mask = segmentation_mask.max(1)[1].squeeze(0)
-        segmentation_mask = utils.filter_segmentation_mask(segmentation_mask)
-        segmentation_mask = torch.nn.functional.interpolate(
-            segmentation_mask.unsqueeze(0).unsqueeze(0).float(), size=(256, 256), mode='nearest'
+        # Creates the text segmentation mask
+        text: torch.Tensor = processing(image).unsqueeze(0).cuda()
+        text_segmentation: torch.Tensor = self._segment_image(
+            image=text, num_images=num_images
         )
-        segmentation_mask = segmentation_mask.squeeze(1).repeat(num_images, 1, 1).long().to("cuda")
 
-        # Creates the ...
-        feature_mask = torch.ones(num_images, 1, 64, 64).to("cuda")
+        # Creates the image to fill with the text
+        image: torch.Tensor = torch.zeros(num_images, 3, 512, 512).to("cuda")
 
-        # Creates the ...
-        masked_image = torch.zeros(num_images, 3, 512, 512).to("cuda")
+        image: torch.Tensor = self._vae.encode(image).latent_dist.sample()
+        image: torch.Tensor = image * self._vae.config.scaling_factor
 
-        masked_feature = self._vae.encode(masked_image).latent_dist.sample()
-        masked_feature = masked_feature * self._vae.config.scaling_factor
+        # Creates the features
+        feature_mask: torch.Tensor = torch.ones(num_images, 1, 64, 64).to("cuda")
 
-        return segmentation_mask, feature_mask, masked_feature
+        return text_segmentation, feature_mask, image
 
     def __call__(
             self,
             image: np.ndarray,
             prompt: str,
+            negative_prompt: str = "",
             num_images: int = 1,
             num_steps: int = 50,
-            guidance_scale: float = 7.5
-    ) -> list[Image.Image]:
+            guidance_scale: float = 7.5,
+            latents: torch.Tensor = None,
+            seed: int = None
+    ) -> Tuple[torch.Tensor, List[Image.Image]]:
+        self._scheduler.set_timesteps(num_steps)
+
+        # Creates the randomness controller
+        generator = None if seed is None else torch.Generator(device="cpu").manual_seed(seed)
+
         # Prepares the starting random noise
-        latents = self._randn(
-            b=num_images,
-            c=self._vae.config.latent_channels,
-            w=512,
-            h=512,
-            generator=None
-        ).to("cuda")
+        if latents is None:
+            latents: torch.Tensor = self._randn(
+                b=num_images,
+                c=self._vae.config.latent_channels,
+                w=512,
+                h=512,
+                generator=generator
+            )
+        latents = latents.to("cuda")
 
         # Prepares the encoded version of the prompt/negative prompt
         encoder_hidden_states, encoder_hidden_states_nocond = self._prepare_prompt(
-            prompt=prompt, num_images=num_images
+            prompt=prompt, negative_prompt=negative_prompt, num_images=num_images
         )
 
         # Prepares the text diffuser inputs
@@ -119,17 +122,14 @@ class Image2ImageDiffuser(TextDiffuser):
             image=image, num_images=num_images
         )
 
-        # ------------------------------------------------------ #
-        generated_images = self._generate_images(
+        # Generates images
+        return latents.cpu(), self._generate_images(
             latents=latents,
             encoder_hidden_states=encoder_hidden_states,
             encoder_hidden_states_nocond=encoder_hidden_states_nocond,
             segmentation_mask=segmentation_mask,
             feature_mask=feature_mask,
             masked_feature=masked_feature,
-            guidance_scale=guidance_scale
+            guidance_scale=guidance_scale,
+            generator=generator
         )
-        print(type(generated_images))
-
-        # Converts the tensor into PIL images
-        return [ToPILImage()(image) for image in generated_images]

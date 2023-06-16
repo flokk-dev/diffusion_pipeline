@@ -68,16 +68,16 @@ class StableDiffuser(Diffuser):
         )
 
     def __call__(
-        self,
-        prompt: str,
-        negative_prompt: str = "",
-        num_images: int = 1,
-        width: int = 512,
-        height: int = 512,
-        num_steps: int = 50,
-        guidance_scale: float = 7.5,
-        latents: torch.Tensor = None,
-        seed: int = None
+            self,
+            prompt: str,
+            negative_prompt: str = "",
+            num_images: int = 1,
+            width: int = 512,
+            height: int = 512,
+            num_steps: int = 50,
+            guidance_scale: float = 7.5,
+            latents: torch.Tensor = None,
+            seed: int = None
     ) -> Tuple[torch.Tensor, List[Image.Image]]:
         """
         Parameters

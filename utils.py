@@ -16,6 +16,9 @@ import datetime
 import cv2
 import numpy as np
 
+from PIL import Image
+import torch
+
 
 # ---------- INFO ---------- #
 
@@ -49,3 +52,19 @@ def resize_image(image: np.ndarray, resolution: int):
         (w, h),
         interpolation=cv2.INTER_LANCZOS4 if k > 1 else cv2.INTER_AREA
     )
+
+
+def tensor_to_image(tensor: torch.Tensor):
+    images = list()
+    for image in tensor:
+        # From [-1, 1] to [0, 1]
+        image = (image / 2 + 0.5).clamp(0, 1).unsqueeze(0)
+
+        # To numpy ndarray
+        image = image.cpu().permute(0, 2, 3, 1).numpy()[0]
+
+        # To PIL Image
+        image = Image.fromarray((image * 255).round().astype("uint8")).convert('RGB')
+        images.append(image)
+
+    return images

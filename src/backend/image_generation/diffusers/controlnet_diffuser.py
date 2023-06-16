@@ -103,18 +103,18 @@ class ControlNetDiffuser(Diffuser):
         return not self._pipeline_path == pipeline_path or not self._controlnets == controlnets
 
     def __call__(
-        self,
-        images: List[torch.Tensor],
-        prompt: str,
-        negative_prompt: str = "",
-        num_images: int = 1,
-        width: int = 512,
-        height: int = 512,
-        num_steps: int = 50,
-        guidance_scale: float = 7.5,
-        weights: List[float] = None,
-        latents: torch.Tensor = None,
-        seed: int = None
+            self,
+            images: List[torch.Tensor],
+            prompt: str,
+            negative_prompt: str = "",
+            num_images: int = 1,
+            width: int = 512,
+            height: int = 512,
+            num_steps: int = 50,
+            guidance_scale: float = 7.5,
+            weights: List[float] = None,
+            latents: torch.Tensor = None,
+            seed: int = None
     ) -> Tuple[torch.Tensor, List[Image.Image]]:
         """
         Parameters

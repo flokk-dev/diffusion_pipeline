@@ -61,15 +61,15 @@ class Pix2PixDiffuser(Diffuser):
         )
 
     def __call__(
-        self,
-        image: torch.Tensor,
-        prompt: str,
-        negative_prompt: str = "",
-        num_images: int = 1,
-        num_steps: int = 50,
-        guidance_scale: float = 7.5,
-        latents: torch.Tensor = None,
-        seed: int = None
+            self,
+            image: torch.Tensor,
+            prompt: str,
+            negative_prompt: str = "",
+            num_images: int = 1,
+            num_steps: int = 50,
+            guidance_scale: float = 7.5,
+            latents: torch.Tensor = None,
+            seed: int = None
     ) -> Tuple[torch.Tensor, List[Image.Image]]:
         """
         Parameters

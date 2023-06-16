@@ -26,16 +26,11 @@ from src.backend.text_diffuser.utils import get_width, get_key_words, adjust_ove
 from .layout_transformer import LayoutTransformer, TextConditioner
 from termcolor import colored
 
-# import layout transformer
-model = LayoutTransformer().cuda().eval()
-model.load_state_dict(torch.load(os.path.join(paths.TEXT_DIFFUSER, "layout_transformer.pth")))
-
-# import text encoder and tokenizer
-text_encoder = TextConditioner().cuda().eval()
-tokenizer = CLIPTokenizer.from_pretrained('openai/clip-vit-large-patch14')
-
 
 def process_caption(font_path, caption, keywords):
+    # Imports tokenizer
+    tokenizer = CLIPTokenizer.from_pretrained('openai/clip-vit-large-patch14')
+
     # remove punctuations. please remove this statement if you want to paint punctuations
     caption = re.sub(u"([^\u0041-\u005a\u0061-\u007a\u0030-\u0039])", " ", caption)
 
@@ -142,6 +137,14 @@ def process_caption(font_path, caption, keywords):
 
 
 def get_layout_from_prompt(prompt: str):
+    # Imports layout transformer
+    model = LayoutTransformer().cuda().eval()
+    model.load_state_dict(torch.load(os.path.join(paths.TEXT_DIFFUSER, "layout_transformer.pth")))
+
+    # Imports text encoder
+    text_encoder = TextConditioner().cuda().eval()
+
+    # 
     font_path = os.path.join(paths.REQUIREMENTS, "arial.ttf")
     keywords = get_key_words(prompt)
 

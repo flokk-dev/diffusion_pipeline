@@ -14,7 +14,7 @@ import torch
 
 # IMPORT: project
 from src.backend.text_diffuser import Text2ImageDiffuser
-from src.frontend.component import Prompts, Hyperparameters, ImageGeneration
+from src.frontend.component import Prompts, Hyperparameters, ImageGeneration, RankingFeedback
 
 
 class Text2TextImagePage:
@@ -40,6 +40,9 @@ class Text2TextImagePage:
             parent=self, diffuser_type=Text2ImageDiffuser
         )
 
+        # Creates the component allowing the user to give its feedback
+        self.ranking_feedback: RankingFeedback = RankingFeedback(parent=self)
+
         # Defines the image generation inputs and outputs
         self.image_generation.button.click(
             fn=self.on_click,
@@ -49,7 +52,10 @@ class Text2TextImagePage:
                 *self.hyperparameters.retrieve_info()
             ],
             outputs=[
-                self.image_generation.generated_images
+                self.image_generation.generated_images,
+                self.ranking_feedback.row_1,
+                self.ranking_feedback.row_2,
+                self.ranking_feedback.row_3
             ]
         )
 
@@ -66,14 +72,17 @@ class Text2TextImagePage:
         # Creates the dictionary of arguments
         self.args = {
             "prompt": prompt,
+            "negative_prompt": negative_prompt,
             "num_images": int(num_images) if num_images > 0 else 1,
             "num_steps": num_steps,
             "guidance_scale": guidance_scale,
+            "seed": int(seed) if seed >= 0 else None,
         }
 
         # Verifies if an instantiation of the diffuser is needed
         if self.image_generation.diffuser is None:
             self.image_generation.diffuser = Text2ImageDiffuser(pipeline_id)
 
-        generated_images = self.image_generation.diffuser(**self.args)
-        return generated_images
+        self.latents, generated_images = self.image_generation.diffuser(**self.args)
+        return generated_images, \
+            gr.update(visible=True), gr.update(visible=False), gr.update(visible=False)

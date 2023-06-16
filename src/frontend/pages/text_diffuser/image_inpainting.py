@@ -16,8 +16,9 @@ import numpy as np
 # IMPORT: project
 import utils
 
-from src.backend.text_diffuser import Image2ImageDiffuser
-from src.frontend.component import Component, Prompts, Hyperparameters, ImageGeneration
+from src.backend.text_diffuser import ImageInpaintDiffuser
+from src.frontend.component import \
+    Component, Prompts, Hyperparameters, ImageGeneration, RankingFeedback
 
 
 class ImageInPaintPage:
@@ -43,8 +44,11 @@ class ImageInPaintPage:
 
         # Creates the component allowing to generate and display images
         self.image_generation: ImageGeneration = ImageGeneration(
-            parent=self, diffuser_type=Image2ImageDiffuser
+            parent=self, diffuser_type=ImageInpaintDiffuser
         )
+
+        # Creates the component allowing the user to give its feedback
+        self.ranking_feedback: RankingFeedback = RankingFeedback(parent=self)
 
         # Defines the image generation inputs and outputs
         self.image_generation.button.click(
@@ -52,18 +56,23 @@ class ImageInPaintPage:
             inputs=[
                 *self.image_generation.retrieve_info(),
                 self.image_painter.image,
+                self.image_painter.mask,
                 *self.prompts.retrieve_info(),
                 *self.hyperparameters.retrieve_info()
             ],
             outputs=[
-                self.image_generation.generated_images
+                self.image_generation.generated_images,
+                self.ranking_feedback.row_1,
+                self.ranking_feedback.row_2,
+                self.ranking_feedback.row_3
             ]
         )
 
     def on_click(
             self,
             pipeline_id: str,
-            image_to_mask: Dict[str, np.ndarray],
+            image: np.ndarray,
+            mask: np.ndarray,
             prompt: str,
             negative_prompt: str,
             num_images: int,
@@ -74,19 +83,22 @@ class ImageInPaintPage:
         # Creates the dictionary of arguments
         self.args = {
             "prompt": prompt,
-            "image": image_to_mask["image"],
-            "mask": image_to_mask["mask"],
+            "negative_prompt": negative_prompt,
+            "image": image,
+            "mask": mask,
             "num_images": int(num_images) if num_images > 0 else 1,
             "num_steps": num_steps,
             "guidance_scale": guidance_scale,
+            "seed": int(seed) if seed >= 0 else None,
         }
 
         # Verifies if an instantiation of the diffuser is needed
         if self.image_generation.diffuser is None:
-            self.image_generation.diffuser = Image2ImageDiffuser(pipeline_id)
+            self.image_generation.diffuser = ImageInpaintDiffuser(pipeline_id)
 
-        generated_images = self.image_generation.diffuser(**self.args)
-        return generated_images
+        self.latents, generated_images = self.image_generation.diffuser(**self.args)
+        return generated_images, \
+            gr.update(visible=True), gr.update(visible=False), gr.update(visible=False)
 
 
 class ImagePainter(Component):
@@ -112,19 +124,7 @@ class ImagePainter(Component):
         with gr.Accordion(label="Images", open=True):
             with gr.Row():
                 # Creates the component allowing to upload an image
-                self.image = gr.Image(label="Image", tool="sketch").style(height=350)
+                self.image = gr.Image(label="Image").style(height=350)
 
                 # Creates the component allowing to display the prompt
                 self.mask = gr.Image(label="Mask").style(height=350)
-
-            # Creates the component allowing to display the mask
-            button = gr.Button("Display the mask")
-            button.click(
-                fn=self.on_click,
-                inputs=[self.image],
-                outputs=[self.mask]
-            )
-
-    @staticmethod
-    def on_click(image):
-        return image["mask"]

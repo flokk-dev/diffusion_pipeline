@@ -69,15 +69,15 @@ class Image2ImageDiffuser(Diffuser):
         )
 
     def __call__(
-        self,
-        image: torch.Tensor,
-        prompt: str,
-        strength: float = 0.8,
-        negative_prompt: str = "",
-        num_images: int = 1,
-        num_steps: int = 50,
-        guidance_scale: float = 7.5,
-        seed: int = None
+            self,
+            image: torch.Tensor,
+            prompt: str,
+            strength: float = 0.8,
+            negative_prompt: str = "",
+            num_images: int = 1,
+            num_steps: int = 50,
+            guidance_scale: float = 7.5,
+            seed: int = None
     ) -> List[Image.Image]:
         """
         Parameters

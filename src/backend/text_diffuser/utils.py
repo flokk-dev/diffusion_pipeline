@@ -43,7 +43,7 @@ def transform_mask_pil(mask_root):
     return 1 - (binary.astype(np.float32) / 255)
 
 
-def transform_mask(mask_root: str):
+def transform_mask(mask: np.ndarray):
     """
     This function extracts the mask area and text area from the images.
     
@@ -53,8 +53,8 @@ def transform_mask(mask_root: str):
             * The gray area is the masked area
             * The white area is the text area
     """
-    img = cv2.imread(mask_root)
-    img = cv2.resize(img, (512, 512), interpolation=cv2.INTER_NEAREST)
+    img = cv2.resize(mask, (512, 512), interpolation=cv2.INTER_NEAREST)
+    print(img.shape)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ret, binary = cv2.threshold(gray, 250, 255,
                                 cv2.THRESH_BINARY)  # pixel value is set to 0 or 255 according to the threshold
