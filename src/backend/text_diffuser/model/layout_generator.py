@@ -213,7 +213,7 @@ def get_layout_from_prompt(prompt: str):
         font = ImageFont.truetype(font_path, font_size)
 
         # draw.rectangle([xmin, ymin, xmax,ymax], outline=(255,0,0))
-        draw.text((xmin, ymin), text, font=font, fill=(0, 0, 0))
+        draw.text((0, 0), "bite", font=font, fill=(0, 0, 0))
 
         boxes = []
         for i, char in enumerate(text):

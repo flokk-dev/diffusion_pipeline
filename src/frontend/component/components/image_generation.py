@@ -42,7 +42,7 @@ class ImageGeneration(Component):
         # Creates the component allowing to generate and display images
         with gr.Accordion(label="Generation", open=True):
             # Creates the carousel containing the generated images
-            self.generated_images: gr.Gallery = gr.Gallery(label="Images").style(columns=3)
+            self.generated_images: gr.Gallery = gr.Gallery(label="Images", columns=3)
 
             with gr.Row():
                 # Creates the list of the available diffusion models
@@ -52,7 +52,7 @@ class ImageGeneration(Component):
                 )
 
                 # Creates the button allowing to generate images
-                self.button: gr.Button = gr.Button("Generate new images").style(full_width=True)
+                self.button: gr.Button = gr.Button("Generate new images", scale=1)
 
     def retrieve_info(self) -> List[Any]:
         """

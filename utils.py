@@ -11,6 +11,7 @@ from typing import *
 from pynvml import *
 
 import datetime
+import re
 
 # IMPORT: dataset processing
 import cv2
@@ -34,6 +35,15 @@ def gpu_utilization():
     return f"{(info.used / 1024 ** 3):.3f}Go"
 
 
+# ---------- ... ---------- #
+def get_key_words(text: str):
+    matches = re.findall(r"'(.*?)'", text)
+    if not matches:
+        return None
+
+    words = [match.split() for match in matches]
+    return words[0][0]
+
 # ---------- DATA PROCESSING ---------- #
 
 def resize_image(image: np.ndarray, resolution: int):
@@ -45,7 +55,6 @@ def resize_image(image: np.ndarray, resolution: int):
     w *= k
     h = int(np.round(h / 8.0)) * 8
     w = int(np.round(w / 8.0)) * 8
-    print(h, w)
 
     return cv2.resize(
         image,

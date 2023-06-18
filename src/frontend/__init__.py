@@ -3,4 +3,4 @@ from .pages import \
     ImageInpaintingPage, Image2ImagePage, Pix2PixPage, \
     Image2PromptPage, \
     Text2PromptPage, \
-    Text2TextImagePage, Image2TextImagePage, ImageInPaintPage
+    Text2TextImagePage, Image2TextImagePage, ImageInPaintPage, MyTextDiffuserPage

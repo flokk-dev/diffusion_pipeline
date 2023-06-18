@@ -54,7 +54,6 @@ def transform_mask(mask: np.ndarray):
             * The white area is the text area
     """
     img = cv2.resize(mask, (512, 512), interpolation=cv2.INTER_NEAREST)
-    print(img.shape)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ret, binary = cv2.threshold(gray, 250, 255,
                                 cv2.THRESH_BINARY)  # pixel value is set to 0 or 255 according to the threshold

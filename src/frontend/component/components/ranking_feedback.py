@@ -61,7 +61,7 @@ class RankingFeedback(Component):
                 )
 
             # Creates the button allowing to instantiate the algorithm
-            button_1: gr.Button = gr.Button("Give feedback").style(full_width=True)
+            button_1: gr.Button = gr.Button("Give feedback", scale=1)
             button_1.click(
                 fn=self.instantiate_algorithm,
                 inputs=[
@@ -86,7 +86,7 @@ class RankingFeedback(Component):
             )
 
             # Creates the button allowing to run a step of the algorithm
-            button_2: gr.Button = gr.Button("Give feedback").style(full_width=True)
+            button_2: gr.Button = gr.Button("Give feedback", scale=1)
             button_2.click(
                 fn=self.on_click,
                 inputs=[
@@ -110,7 +110,7 @@ class RankingFeedback(Component):
             )
 
             # Creates the button allowing to run a step of the algorithm
-            button_3: gr.Button = gr.Button("Give feedback").style(full_width=True)
+            button_3: gr.Button = gr.Button("Give feedback", scale=1)
             button_3.click(
                 fn=self.on_click,
                 inputs=[

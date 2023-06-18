@@ -21,7 +21,7 @@ class Image2PromptPage:
         # ----- Components ----- #
         with gr.Row():
             # Creates the component allowing to upload an image
-            image = gr.Image(label="Image").style(height=350)
+            image = gr.Image(label="Image", height=350)
 
             # Creates the component allowing to display the prompt
             prompt = gr.TextArea(label="Prompt", lines=5)

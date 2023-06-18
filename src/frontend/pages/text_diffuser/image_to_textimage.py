@@ -34,7 +34,7 @@ class Image2TextImagePage:
         # ----- Components ----- #
         with gr.Accordion(label="Image", open=True):
             # Creates the component allowing to upload an image
-            image = gr.Image(label="Image").style(height=350)
+            image = gr.Image(label="Image", height=350)
 
         # Creates the component allowing to specify the prompt/negative prompt
         self.prompts: Prompts = Prompts(parent=self)

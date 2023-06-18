@@ -115,10 +115,10 @@ class ImagePainter(Component):
         with gr.Accordion(label="Images", open=True):
             with gr.Row():
                 # Creates the component allowing to upload an image
-                self.image = gr.Image(label="Image", tool="sketch").style(height=350)
+                self.image = gr.Image(label="Image", tool="sketch", height=350)
 
                 # Creates the component allowing to display the prompt
-                self.mask = gr.Image(label="Mask").style(height=350)
+                self.mask = gr.Image(label="Mask", height=350)
 
             # Creates the component allowing to display the mask
             button = gr.Button("Display the mask")

@@ -152,11 +152,11 @@ class ControlNet(Component):
                     with gr.Row():
                         with gr.Column(scale=1):
                             # Creates the component allowing to upload an image
-                            self.images.append(gr.Image(label="Image").style(height=350))
+                            self.images.append(gr.Image(label="Image", height=350))
 
                         with gr.Column(scale=1):
                             # Creates the component allowing to display the mask of the image
-                            self.masks.append(gr.Image(label="Mask").style(height=350))
+                            self.masks.append(gr.Image(label="Mask", height=350))
 
                     with gr.Row():
                         # Creates the select box allowing to select the image processing
@@ -187,9 +187,7 @@ class ControlNet(Component):
                     )
 
     def on_click(self, image, processing):
-        mask = self.image_processing_manager(image, processing)
-        print(mask.shape)
-        return mask
+        return self.image_processing_manager(image, processing)
 
     def retrieve_info(self) -> List[Any]:
         info: List[Any] = list()

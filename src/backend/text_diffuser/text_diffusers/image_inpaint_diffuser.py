@@ -15,7 +15,7 @@ import cv2
 import numpy as np
 
 import torch
-from torchvision.transforms import Compose, ToTensor, Normalize
+from torchvision.transforms import Compose, ToTensor, Normalize, ToPILImage
 
 # IMPORT: project
 from src.backend.text_diffuser import TextDiffuser
@@ -87,12 +87,13 @@ class ImageInpaintDiffuser(TextDiffuser):
 
         # Creates the segmentation mask (corresponding to the text)
         text_mask: np.ndarray = cv2.resize(mask, (256, 256), interpolation=cv2.INTER_NEAREST)
-        text_mask: torch.Tensor = ToTensor()(text_mask > 128).float().unsqueeze(0).cuda()
+        text_mask: torch.Tensor = ToTensor()(text_mask > 127).float().unsqueeze(0).cuda()
 
         text_segmentation: torch.Tensor = self._segment_image(image=text_mask, num_images=num_images)
 
         # Creates the ...
-        feature_mask: torch.Tensor = torch.nn.functional.interpolate(text_box, size=(64, 64), mode='nearest')
+        feature_mask: torch.Tensor = torch.nn.functional.interpolate(text_box, size=(64, 64),
+                                                                     mode='nearest')
 
         return text_segmentation, feature_mask, image_without_text
 

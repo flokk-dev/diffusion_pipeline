@@ -16,7 +16,9 @@ from src.frontend import \
     ImageInpaintingPage, Image2ImagePage, Pix2PixPage, \
     Image2PromptPage, \
     Text2PromptPage, \
-    Text2TextImagePage, Image2TextImagePage, ImageInPaintPage
+    Text2TextImagePage, Image2TextImagePage, ImageInPaintPage, MyTextDiffuserPage
+
+from src.backend.text_diffuser.model.layout_generator import get_layout_from_prompt
 
 with gr.Blocks() as demo:
     # ----- Components ----- #
@@ -38,6 +40,8 @@ with gr.Blocks() as demo:
 
     # Instantiates the Text Diffuser page
     with gr.Tab("Text-Diffuser"):
+        with gr.Tab("Homemade"):
+            MyTextDiffuserPage()
         with gr.Tab("Text2Image"):
             Text2TextImagePage()
         with gr.Tab("Image2Image"):
