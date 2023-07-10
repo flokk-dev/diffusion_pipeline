@@ -20,9 +20,7 @@ from src.backend.image_processing.image_processing import ImageProcessing
 class MediapipeFace(ImageProcessing):
     """ Represents a MediapipeFace processing. """
 
-    def __init__(
-            self
-    ):
+    def __init__(self):
         """ Initializes a MediapipeFace processing. """
         super(MediapipeFace, self).__init__()
 

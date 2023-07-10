@@ -34,6 +34,7 @@ class Image2ImageDiffuser(Diffuser):
         "StableDiffusion_v1.5": "runwayml/stable-diffusion-v1-5",
         "StableDiffusion_v2.0": "stabilityai/stable-diffusion-2",
         "StableDiffusion_v2.1": "stabilityai/stable-diffusion-2-1",
+        "StableDiffusion_XL": "RamAnanth1/stable-diffusion-xl",
         "DreamLike_v1.0": "dreamlike-art/dreamlike-photoreal-1.0",
         "DreamLike_v2.0": "dreamlike-art/dreamlike-photoreal-2.0",
         "OpenJourney_v4.0": "prompthero/openjourney-v4",
@@ -70,6 +71,7 @@ class Image2ImageDiffuser(Diffuser):
 
     def __call__(
             self,
+            lora_path: str,
             image: torch.Tensor,
             prompt: str,
             strength: float = 0.8,
@@ -104,6 +106,11 @@ class Image2ImageDiffuser(Diffuser):
             List[Image.Image]
                 generated images
         """
+        print(lora_path)
+        if self._lora_path is not None or lora_path != "":
+            self._lora_path = lora_path
+            self._pipeline.unet.load_attn_procs(lora_path)
+
         # Verifies the input images
         image = ToTensor()(image).unsqueeze(0)
 

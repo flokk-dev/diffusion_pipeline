@@ -20,9 +20,7 @@ from src.backend.image_processing.image_processing import ImageProcessing
 class OpenPose(ImageProcessing):
     """ Represents an OpenPose processing. """
 
-    def __init__(
-            self
-    ):
+    def __init__(self):
         """ Initializes an OpenPose processing. """
         super(OpenPose, self).__init__()
 
@@ -47,5 +45,5 @@ class OpenPose(ImageProcessing):
                 processed image
         """
         # Runs the processing into the image
-        output_image: np.ndarray = self._processor(input_image=image, return_pil=False)
+        output_image: np.ndarray = self._processor(input_image=image, hand_and_face=True, return_pil=False)
         return self._resize(image, output_image)

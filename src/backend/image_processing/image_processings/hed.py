@@ -20,9 +20,7 @@ from src.backend.image_processing.image_processing import ImageProcessing
 class Hed(ImageProcessing):
     """ Represents an HED processing. """
 
-    def __init__(
-            self
-    ):
+    def __init__(self):
         """ Initializes an HED processing. """
         super(Hed, self).__init__()
 

@@ -25,6 +25,9 @@ class Diffuser:
         _pipeline: DiffusionPipeline
             diffusion pipeline
     """
+    LORA = [
+        "flokk/2023-07-04-17-05-55"
+    ]
 
     def __init__(self, pipeline_path: str):
         """
@@ -42,12 +45,15 @@ class Diffuser:
         self._pipeline: Any = self._init_pipeline()
         self._pipeline.enable_model_cpu_offload()
 
+        # LoRA
+        self._lora_path: str = None
+
         # Modifies the noise scheduler
         self._pipeline.scheduler = UniPCMultistepScheduler.from_config(
             self._pipeline.scheduler.config
         )
 
-    def is_different(self, pipeline_path: str) -> bool:
+    def is_different(self, pipeline_path: str, lora_path: str) -> bool:
         """
         Checks if the new parameters are different
 
@@ -55,13 +61,21 @@ class Diffuser:
         ----------
             pipeline_path: str
                 new pipeline path
+            lora_path: str
+                new LoRA path
 
         Returns
         ----------
             bool
                 whether or not the new parameters are different
         """
-        return not self._pipeline_path == pipeline_path
+        if not self._pipeline_path == pipeline_path:
+            return True
+
+        if not self._lora_path == lora_path:
+            return True
+
+        return False
 
     def _init_pipeline(self):
         """

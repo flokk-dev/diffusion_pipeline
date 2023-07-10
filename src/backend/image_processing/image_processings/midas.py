@@ -21,9 +21,7 @@ from src.backend.image_processing.image_processing import ImageProcessing
 class Midas(ImageProcessing):
     """ Represents a Midas processing. """
 
-    def __init__(
-            self
-    ):
+    def __init__(self):
         """ Initializes a Midas processing. """
         super(Midas, self).__init__()
 

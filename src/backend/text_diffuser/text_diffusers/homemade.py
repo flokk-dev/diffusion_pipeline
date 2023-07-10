@@ -158,6 +158,7 @@ class MyTextDiffuser(TextDiffuser):
 
         # Creates the ...
         feature_mask: torch.Tensor = torch.nn.functional.interpolate(text_box, size=(64, 64), mode='nearest')
+        feature_mask: torch.Tensor = feature_mask.repeat(num_images, 1, 1, 1)
 
         return text_segmentation, feature_mask, image_without_text
 

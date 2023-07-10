@@ -33,6 +33,7 @@ class StableDiffuser(Diffuser):
         "StableDiffusion_v1.5": "runwayml/stable-diffusion-v1-5",
         "StableDiffusion_v2.0": "stabilityai/stable-diffusion-2",
         "StableDiffusion_v2.1": "stabilityai/stable-diffusion-2-1",
+        "StableDiffusion_XL": "RamAnanth1/stable-diffusion-xl",
         "DreamLike_v1.0": "dreamlike-art/dreamlike-photoreal-1.0",
         "DreamLike_v2.0": "dreamlike-art/dreamlike-photoreal-2.0",
         "OpenJourney_v4.0": "prompthero/openjourney-v4",
@@ -69,6 +70,7 @@ class StableDiffuser(Diffuser):
 
     def __call__(
             self,
+            lora_path: str,
             prompt: str,
             negative_prompt: str = "",
             num_images: int = 1,
@@ -108,6 +110,10 @@ class StableDiffuser(Diffuser):
             List[Image.Image]
                 generated images
         """
+        if self._lora_path is not None or lora_path != "":
+            self._lora_path = lora_path
+            self._pipeline.unet.load_attn_procs(lora_path)
+
         # Creates the randomness controller
         generator = None if seed is None else torch.Generator(device="cpu").manual_seed(seed)
 

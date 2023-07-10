@@ -34,6 +34,7 @@ class ControlNetDiffuser(Diffuser):
         "StableDiffusion_v1.5": "runwayml/stable-diffusion-v1-5",
         "StableDiffusion_v2.0": "stabilityai/stable-diffusion-2",
         "StableDiffusion_v2.1": "stabilityai/stable-diffusion-2-1",
+        "StableDiffusion_XL": "RamAnanth1/stable-diffusion-xl",
         "DreamLike_v1.0": "dreamlike-art/dreamlike-photoreal-1.0",
         "DreamLike_v2.0": "dreamlike-art/dreamlike-photoreal-2.0",
         "OpenJourney_v4.0": "prompthero/openjourney-v4",
@@ -49,7 +50,7 @@ class ControlNetDiffuser(Diffuser):
         "Lineart": "lllyasviel/control_v11p_sd15_lineart",
         "Lineart anime": "lllyasviel/control_v11p_sd15s2_lineart_anime",
         "MLSD": "lllyasviel/sd-controlnet-mlsd",
-        "Normal BAE": "lllyasviel/sd-controlnet-normalbae",
+        "Normal BAE": "lllyasviel/sd-controlnet-normal",
         "OpenPose": "lllyasviel/sd-controlnet-openpose",
         "Seg": "lllyasviel/control_v11p_sd15_seg",
         "Shuffle": "lllyasviel/control_v11e_sd15_shuffle"
@@ -99,11 +100,38 @@ class ControlNetDiffuser(Diffuser):
             safety_checker=None
         )
 
-    def is_different(self, pipeline_path: str, controlnets: List[str]) -> bool:
-        return not self._pipeline_path == pipeline_path or not self._controlnets == controlnets
+    def is_different(self, pipeline_path: str, controlnets: List[str], lora_path: str) -> bool:
+        """
+        Checks if the new parameters are different
+
+        Parameters
+        ----------
+            pipeline_path: str
+                new pipeline path
+            controlnets: List[str]
+                list of the new controlnets
+            lora_path: str
+                new LoRA path
+
+        Returns
+        ----------
+            bool
+                whether or not the new parameters are different
+        """
+        if not self._pipeline_path == pipeline_path:
+            return True
+
+        if not self._controlnets == controlnets:
+            return True
+
+        if not self._lora_path == lora_path:
+            return True
+
+        return False
 
     def __call__(
             self,
+            lora_path: str,
             images: List[torch.Tensor],
             prompt: str,
             negative_prompt: str = "",
@@ -147,6 +175,11 @@ class ControlNetDiffuser(Diffuser):
             List[Image.Image]
                 generated images
         """
+        print(lora_path)
+        if self._lora_path is not None or lora_path != "":
+            self._lora_path = lora_path
+            self._pipeline.unet.load_attn_procs(lora_path)
+
         # Verifies the input images
         processing: Compose = Compose([ToTensor(), Resize((height, width), antialias=True)])
         images = [processing(image).unsqueeze(0) for image in images]

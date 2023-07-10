@@ -63,6 +63,7 @@ class ImageInpaintDiffuser(Diffuser):
 
     def __call__(
             self,
+            lora_path: str,
             image: torch.Tensor,
             mask: torch.Tensor,
             prompt: str,
@@ -102,6 +103,11 @@ class ImageInpaintDiffuser(Diffuser):
             List[Image.Image]
                 generated images
         """
+        print(lora_path)
+        if self._lora_path is not None or lora_path != "":
+            self._lora_path = lora_path
+            self._pipeline.unet.load_attn_procs(lora_path)
+
         # Verifies the input images
         processing: ToTensor = ToTensor()
 

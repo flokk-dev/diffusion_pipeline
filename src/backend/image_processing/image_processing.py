@@ -18,9 +18,7 @@ import utils
 class ImageProcessing:
     """ Represents an image processing. """
 
-    def __init__(
-            self
-    ):
+    def __init__(self):
         """ Initializes an image processing. """
         # ----- Attributes ----- #
         # Object allowing to process images

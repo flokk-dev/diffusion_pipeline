@@ -61,6 +61,7 @@ class ImageInpaintingPage:
     def on_click(
             self,
             pipeline_id: str,
+            lora_id: str,
             image_to_mask: Dict[str, np.ndarray],
             prompt: str,
             negative_prompt: str,
@@ -71,6 +72,7 @@ class ImageInpaintingPage:
     ):
         # Creates the dictionary of arguments
         self.args = {
+            "lora_path": lora_id,
             "prompt": prompt,
             "image": utils.resize_image(image_to_mask["image"], resolution=512),
             "mask": utils.resize_image(image_to_mask["mask"], resolution=512),
@@ -82,10 +84,10 @@ class ImageInpaintingPage:
         }
 
         # Verifies if an instantiation of the diffuser is needed
-        if self.image_generation.diffuser is None or self.image_generation.diffuser.is_different(
-            pipeline_path=pipeline_id
-        ):
-            self.image_generation.diffuser = ImageInpaintDiffuser(pipeline_id)
+        # if self.image_generation.diffuser is None or self.image_generation.diffuser.is_different(
+            # pipeline_path=pipeline_id, lora_path=lora_id
+        # ):
+        self.image_generation.diffuser = ImageInpaintDiffuser(pipeline_id)
 
         self.latents, generated_images = self.image_generation.diffuser(**self.args)
         return generated_images, \

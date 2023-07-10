@@ -62,6 +62,7 @@ class Pix2PixDiffuser(Diffuser):
 
     def __call__(
             self,
+            lora_path: str,
             image: torch.Tensor,
             prompt: str,
             negative_prompt: str = "",
@@ -98,6 +99,11 @@ class Pix2PixDiffuser(Diffuser):
             List[Image.Image]
                 generated images
         """
+        print(lora_path)
+        if self._lora_path is not None or lora_path != "":
+            self._lora_path = lora_path
+            self._pipeline.unet.load_attn_procs(lora_path)
+
         # Verifies the input images
         image = ToTensor()(image).unsqueeze(0)
 

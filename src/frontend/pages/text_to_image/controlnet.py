@@ -65,6 +65,7 @@ class ControlNetPage:
     def on_click(
             self,
             pipeline_id: str,
+            lora_id: str,
             mask_0: np.ndarray, processing_0: str, weight_0: float,
             mask_1: np.ndarray, processing_1: str, weight_1: float,
             mask_2: np.ndarray, processing_2: str, weight_2: float,
@@ -94,6 +95,7 @@ class ControlNetPage:
 
         # Creates the dictionary of arguments
         self.args = {
+            "lora_path": lora_id,
             "images": masks,
             "weights": weights,
             "prompt": prompt,
@@ -107,10 +109,10 @@ class ControlNetPage:
         }
 
         # Verifies if an instantiation of the diffuser is needed
-        if self.image_generation.diffuser is None or self.image_generation.diffuser.is_different(
-            pipeline_path=pipeline_id, controlnets=controlnet_ids
-        ):
-            self.image_generation.diffuser = ControlNetDiffuser(pipeline_id, controlnet_ids)
+        # if self.image_generation.diffuser is None or self.image_generation.diffuser.is_different(
+            # pipeline_path=pipeline_id, controlnets=controlnet_ids, lora_path=lora_id
+        # ):
+        self.image_generation.diffuser = ControlNetDiffuser(pipeline_id, controlnet_ids)
 
         self.latents, generated_images = self.image_generation.diffuser(**self.args)
         return generated_images, \
@@ -218,7 +220,7 @@ class CustomHyperparameters(Hyperparameters):
         # Creates the slider allowing to specify the width of the image to generate
         self.components["width"]: gr.Slider = gr.Slider(
             label="Width",
-            minimum=0, maximum=1024,
+            minimum=0, maximum=2048,
             value=512,
             step=8,
             interactive=True
@@ -227,7 +229,7 @@ class CustomHyperparameters(Hyperparameters):
         # Creates the slider allowing to specify the height of the image to generate
         self.components["height"]: gr.Slider = gr.Slider(
             label="Height",
-            minimum=0, maximum=1024,
+            minimum=0, maximum=2048,
             value=512,
             step=8,
             interactive=True

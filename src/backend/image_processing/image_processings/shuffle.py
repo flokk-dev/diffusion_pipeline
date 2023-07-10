@@ -20,9 +20,7 @@ from src.backend.image_processing.image_processing import ImageProcessing
 class ContentShuffle(ImageProcessing):
     """ Represents a ContentShuffle processing. """
 
-    def __init__(
-            self
-    ):
+    def __init__(self):
         """ Initializes a ContentShuffle processing. """
         super(ContentShuffle, self).__init__()
 

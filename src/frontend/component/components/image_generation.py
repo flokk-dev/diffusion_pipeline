@@ -51,6 +51,15 @@ class ImageGeneration(Component):
                     choices=list(diffuser_type.PIPELINES.keys())
                 )
 
+                # Creates the list of the available diffusion models
+                try:
+                    self.lora_id: gr.Dropdown = gr.Dropdown(
+                        label="LoRA layers",
+                        choices=[""] + list(diffuser_type.LORA)
+                    )
+                except AttributeError:
+                    pass
+
                 # Creates the button allowing to generate images
                 self.button: gr.Button = gr.Button("Generate new images", scale=1)
 
@@ -63,6 +72,12 @@ class ImageGeneration(Component):
             List[Any]
                 info within the component
         """
-        return [
-            self.pipeline_id
-        ]
+        try:
+            return [
+                self.pipeline_id,
+                self.lora_id
+            ]
+        except AttributeError:
+            return [
+                self.pipeline_id
+            ]

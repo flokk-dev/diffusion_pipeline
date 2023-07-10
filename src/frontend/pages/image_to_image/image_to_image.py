@@ -56,6 +56,7 @@ class Image2ImagePage:
     def on_click(
             self,
             pipeline_id: str,
+            lora_id: str,
             image: np.ndarray,
             prompt: str,
             negative_prompt: str,
@@ -67,6 +68,7 @@ class Image2ImagePage:
     ):
         # Creates the dictionary of arguments
         self.args = {
+            "lora_path": lora_id,
             "prompt": prompt,
             "image": utils.resize_image(image, resolution=512),
             "strength": strength,
@@ -78,10 +80,10 @@ class Image2ImagePage:
         }
 
         # Verifies if an instantiation of the diffuser is needed
-        if self.image_generation.diffuser is None or self.image_generation.diffuser.is_different(
-            pipeline_path=pipeline_id
-        ):
-            self.image_generation.diffuser = Image2ImageDiffuser(pipeline_id)
+        # if self.image_generation.diffuser is None or self.image_generation.diffuser.is_different(
+            # pipeline_path=pipeline_id, lora_path=lora_id
+        # ):
+        self.image_generation.diffuser = Image2ImageDiffuser(pipeline_id)
 
         return self.image_generation.diffuser(**self.args)
 
