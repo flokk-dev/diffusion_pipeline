@@ -35,7 +35,7 @@ class ClipInterrogator:
         # Model allowing to transform images into prompts
         self._model: Interrogator = Interrogator(model_config)
 
-    def __call__(self, image: Image.Image, mode: str = None, max_flavor: int = 10) -> str:
+    def __call__(self, image: Image.Image, mode: str = "best", max_flavor: int = 10) -> str:
         """
         Parameters
         ----------
